@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Processar Logo — Fundo Transparente + Texto Branco</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #111;
+    color: #eee;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  h1 { font-size: 20px; margin-bottom: 6px; color: #fff; }
+  p  { font-size: 14px; color: #999; margin-bottom: 30px; text-align: center; }
+
+  .drop-zone {
+    width: 100%;
+    max-width: 600px;
+    border: 2px dashed #555;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    margin-bottom: 30px;
+  }
+  .drop-zone.over { border-color: #cc0000; }
+  .drop-zone .icon { font-size: 40px; margin-bottom: 10px; }
+  .drop-zone span { color: #aaa; font-size: 14px; }
+  input[type="file"] { display: none; }
+
+  .previews {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
+  .preview-box {
+    text-align: center;
+  }
+  .preview-box label {
+    display: block;
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  canvas {
+    border-radius: 8px;
+    max-width: 500px;
+    max-height: 300px;
+  }
+  #canvasOriginal { background: #000; }
+  #canvasResult   { background: repeating-conic-gradient(#333 0% 25%, #444 0% 50%) 0 0 / 16px 16px; }
+
+  .controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  label.ctrl { color: #aaa; font-size: 13px; }
+  input[type="range"] { width: 120px; }
+  .val { color: #fff; font-weight: 700; min-width: 28px; }
+
+  .btn {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn:active { opacity: 0.8; }
+  .btn-process  { background: #cc0000; color: #fff; }
+  .btn-download { background: #16a34a; color: #fff; }
+  .btn-download:disabled { background: #333; color: #666; cursor: default; }
+
+  .status { font-size: 13px; color: #888; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>Processar Logo — Fundo Transparente + Texto Branco</h1>
+<p>Arraste sua imagem do logo abaixo ou clique para selecionar.<br>
+   O fundo preto será removido e o texto ficará branco puro.</p>
+
+<div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+  <div class="icon">🖼️</div>
+  <span>Arraste o logo aqui ou clique para selecionar</span>
+  <input type="file" id="fileInput" accept="image/*">
+</div>
+
+<div class="controls">
+  <label class="ctrl">Limiar de fundo:</label>
+  <input type="range" id="threshold" min="1" max="120" value="55">
+  <span class="val" id="threshVal">55</span>
+  <button class="btn btn-process" onclick="processImage()">🔄 Processar</button>
+  <button class="btn btn-download" id="btnDownload" disabled onclick="downloadResult()">⬇️ Baixar PNG</button>
+</div>
+
+<div class="previews" id="previews" style="display:none;">
+  <div class="preview-box">
+    <label>Original</label>
+    <canvas id="canvasOriginal"></canvas>
+  </div>
+  <div class="preview-box">
+    <label>Resultado (fundo xadrez = transparente)</label>
+    <canvas id="canvasResult"></canvas>
+  </div>
+</div>
+
+<p class="status" id="status"></p>
+
+<script>
+let originalImageData = null;
+
+// Drag & drop
+const dropZone = document.getElementById('dropZone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadImage(file);
+});
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) loadImage(e.target.files[0]);
+});
+
+// Slider
+document.getElementById('threshold').addEventListener('input', function() {
+  document.getElementById('threshVal').textContent = this.value;
+  if (originalImageData) processImage();
+});
+
+function loadImage(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      // Desenha no canvas original
+      const c = document.getElementById('canvasOriginal');
+      c.width = img.width; c.height = img.height;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      originalImageData = ctx.getImageData(0, 0, img.width, img.height);
+
+      document.getElementById('canvasResult').width = img.width;
+      document.getElementById('canvasResult').height = img.height;
+      document.getElementById('previews').style.display = 'flex';
+      document.getElementById('status').textContent = `Imagem carregada: ${img.width}×${img.height}px`;
+      processImage();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function processImage() {
+  if (!originalImageData) return;
+  const threshold = parseInt(document.getElementById('threshold').value);
+
+  const src = originalImageData;
+  const result = document.getElementById('canvasResult');
+  result.width = src.width; result.height = src.height;
+  const ctx = result.getContext('2d');
+  const out = ctx.createImageData(src.width, src.height);
+
+  for (let i = 0; i < src.data.length; i += 4) {
+    const r = src.data[i];
+    const g = src.data[i+1];
+    const b = src.data[i+2];
+    const brightness = (r + g + b) / 3;
+
+    if (brightness <= threshold) {
+      // Pixel escuro = fundo → transparente
+      out.data[i]   = 0;
+      out.data[i+1] = 0;
+      out.data[i+2] = 0;
+      out.data[i+3] = 0; // transparente
+    } else {
+      // Pixel claro = texto → BRANCO puro
+      out.data[i]   = 255;
+      out.data[i+1] = 255;
+      out.data[i+2] = 255;
+      out.data[i+3] = 255; // opaco
+    }
+  }
+
+  ctx.putImageData(out, 0, 0);
+  document.getElementById('btnDownload').disabled = false;
+  document.getElementById('status').textContent =
+    `Pronto! Limiar=${threshold}. Ajuste o slider se precisar de mais ou menos texto.`;
+}
+
+function downloadResult() {
+  const canvas = document.getElementById('canvasResult');
+  const a = document.createElement('a');
+  a.download = 'logo-adriano-branco.png';
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,3723 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Ficha de Visita">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Ficha de Visita — REMAX Noble</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=Bodoni+Moda:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --red: #cc0000;
+    --dark: #1a1a1a;
+    --gray: #6b7280;
+    --light: #f9fafb;
+    --border: #e5e7eb;
+    --navy: #0a1628;
+    --green: #16a34a;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #f3f4f6;
+    color: var(--dark);
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--navy);
+    padding: 10px 12px 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+  .header-logos {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .logo-balloon {
+    height: 44px;
+    width: auto;
+    flex-shrink: 0;
+  }
+  .logo-sep {
+    width: 1px;
+    height: 28px;
+    background: rgba(255,255,255,0.2);
+    flex-shrink: 0;
+  }
+  /* ── Logo ADRIANO AGUIRRE — Cormorant Garamond, fiel ao original ── */
+  .aa-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 0;
+  }
+  .aa-logo .aa-word {
+    font-family: 'Cormorant Garamond', 'Cormorant', Garamond, 'Times New Roman', serif;
+    font-weight: 300;
+    color: #FFFFFF;
+    letter-spacing: 0.32em;
+    white-space: nowrap;
+    line-height: 1;
+    display: block;
+  }
+  .aa-logo .aa-rules {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-self: stretch;
+    margin: 4px 0;
+  }
+  .aa-logo .aa-rules span {
+    display: block;
+    height: 0.7px;
+    background: rgba(255,255,255,0.82);
+  }
+  /* header pequeno */
+  .aa-logo.aa-sm .aa-word { font-size: 13px; }
+  /* home grande */
+  .aa-logo.aa-lg .aa-word { font-size: 28px; letter-spacing: 0.38em; }
+  /* Auth area */
+  .header-auth {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── REMAX NOBLE DIV ── */
+  .logo-remax-div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 0px;
+  }
+  .logo-remax-div .rm-imoveis {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .logo-remax-div .rm-name {
+    font-family: Impact, 'Arial Black', Arial, sans-serif;
+    font-size: 28px;
+    font-weight: 900;
+    color: #FFFFFF;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+  .logo-remax-div .rm-noble {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 11px;
+    font-weight: 400;
+    font-style: italic;
+    color: #FFFFFF;
+    letter-spacing: 3px;
+    white-space: nowrap;
+  }
+
+
+  .header-step {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .step-info { display: flex; flex-direction: column; }
+  .step-name { color: rgba(255,255,255,0.9); font-size: 13px; font-weight: 700; }
+  .step-count { color: rgba(255,255,255,0.5); font-size: 11px; }
+  .header-badge {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.8);
+  }
+  .progress-bar { background: rgba(255,255,255,0.15); border-radius: 99px; height: 3px; margin-top: 8px; }
+  .progress-fill { background: var(--red); border-radius: 99px; height: 3px; transition: width 0.4s ease; width: 0%; }
+
+  /* ── STEP DOTS ── */
+  .step-dots { display: flex; justify-content: center; gap: 5px; padding: 6px 0 2px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2); transition: all 0.3s; }
+  .dot.active { background: var(--red); width: 16px; border-radius: 3px; }
+  .dot.done { background: var(--green); }
+
+  /* ── SECTIONS ── */
+  .section { background: white; margin: 16px; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: none; }
+  .section.active { display: block; }
+  .section-header { background: var(--light); border-bottom: 1px solid var(--border); padding: 13px 18px; display: flex; align-items: center; gap: 10px; }
+  .section-icon { width: 30px; height: 30px; background: var(--red); border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .section-title { font-size: 14px; font-weight: 700; }
+  .section-body { padding: 18px; }
+
+  /* ── FIELDS ── */
+  .field { margin-bottom: 16px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  input[type="text"], input[type="date"], input[type="time"], input[type="number"], input[type="url"], input[type="tel"], textarea, select {
+    width: 100%; border: 1.5px solid var(--border); border-radius: 8px; padding: 11px 13px;
+    font-size: 15px; font-family: inherit; color: var(--dark); background: white;
+    transition: border-color 0.2s; -webkit-appearance: none;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(204,0,0,0.08); }
+  textarea { resize: none; min-height: 85px; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── CHIPS ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+  .chip input { display: none; }
+  .chip label {
+    display: inline-block; border: 1.5px solid var(--border); border-radius: 20px;
+    padding: 7px 13px; font-size: 13px; font-weight: 600; color: var(--gray);
+    cursor: pointer; transition: all 0.15s; text-transform: none; letter-spacing: 0; margin: 0; user-select: none;
+  }
+  .chip input:checked + label { background: var(--red); border-color: var(--red); color: white; }
+  .r-chip input { display: none; }
+  .r-chip label {
+    padding: 8px 13px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 13px;
+    font-weight: 600; cursor: pointer; color: var(--gray); transition: all 0.15s;
+    text-transform: none; letter-spacing: 0; margin: 0;
+  }
+  .r-chip.excelente input:checked + label { background:#dcfce7; border-color:#16a34a; color:#15803d; }
+  .r-chip.bom input:checked + label { background:#dbeafe; border-color:#2563eb; color:#1d4ed8; }
+  .r-chip.medio input:checked + label { background:#fef9c3; border-color:#ca8a04; color:#a16207; }
+  .r-chip.ruim input:checked + label { background:#ffedd5; border-color:#ea580c; color:#c2410c; }
+  .r-chip.pessimo input:checked + label { background:#fee2e2; border-color:#dc2626; color:#b91c1c; }
+
+  /* ── TOGGLE SWITCH ── */
+  .toggle-wrap {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--light); border-radius: 10px; padding: 14px; border: 1.5px solid var(--border);
+  }
+  .toggle-label-group { flex: 1; }
+  .toggle-label-group strong { display: block; font-size: 14px; font-weight: 700; color: var(--dark); }
+  .toggle-label-group span { font-size: 12px; color: var(--gray); }
+  .toggle {
+    position: relative; width: 48px; height: 28px; flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: #d1d5db; border-radius: 28px; cursor: pointer; transition: 0.3s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute; width: 22px; height: 22px;
+    left: 3px; top: 3px; background: white; border-radius: 50%;
+    transition: 0.3s; box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .toggle input:checked + .toggle-slider { background: var(--red); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+  /* ── INFO BOX ── */
+  .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #1e40af; line-height: 1.5; margin-bottom: 14px; }
+  .warn-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #9a3412; line-height: 1.5; margin-bottom: 14px; }
+
+  /* ── CORRETOR CARD ── */
+  .corretor-saved {
+    background: linear-gradient(135deg, var(--navy) 0%, #1e3a5f 100%);
+    border-radius: 10px; padding: 16px; margin-bottom: 16px; color: white;
+  }
+  .corretor-saved .name { font-size: 17px; font-weight: 800; }
+  .corretor-saved .sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+  .corretor-saved .edit-btn {
+    background: rgba(255,255,255,0.15); border: none; color: white; border-radius: 6px;
+    padding: 5px 10px; font-size: 12px; cursor: pointer; margin-top: 10px;
+  }
+
+  /* ── QUESTIONS ── */
+  .q-card { background: var(--light); border-radius: 10px; padding: 15px; margin-bottom: 13px; border-left: 3px solid var(--red); }
+  .q-card:last-child { margin-bottom: 0; }
+  .q-text { font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 9px; line-height: 1.4; }
+  .q-card textarea { background: white; min-height: 75px; font-size: 14px; }
+
+  /* ── PHOTOS ── */
+  .photo-option-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .photo-opt-btn {
+    border: 2px solid var(--border); border-radius: 10px; background: white; padding: 14px 10px;
+    text-align: center; cursor: pointer; transition: all 0.2s;
+  }
+  .photo-opt-btn.selected { border-color: var(--red); background: #fff5f5; }
+  .photo-opt-btn .opt-icon { font-size: 24px; display: block; margin-bottom: 5px; }
+  .photo-opt-btn .opt-label { font-size: 12px; font-weight: 700; color: var(--dark); }
+  .photo-opt-btn .opt-sub { font-size: 11px; color: var(--gray); margin-top: 2px; }
+
+  .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 10px; }
+  .photo-thumb { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--light); border: 1.5px solid var(--border); }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-thumb .del-btn {
+    position: absolute; top: 3px; right: 3px; background: rgba(0,0,0,0.55); color: white;
+    border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+  .photo-thumb .photo-caption { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; font-size: 9px; padding: 3px 5px; text-align: center; }
+  .add-photo-btn {
+    aspect-ratio: 1; border-radius: 8px; border: 2px dashed var(--border); background: none;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; cursor: pointer; color: var(--gray); font-size: 11px; font-weight: 600;
+  }
+  .add-photo-btn:active { background: var(--light); }
+  .add-photo-btn .icon { font-size: 22px; }
+  input[type="file"] { display: none; }
+  .photo-section-label { font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 6px; }
+  .photo-section-label:first-child { margin-top: 0; }
+
+  /* ── SUMMARY ── */
+  .summary-card { background: var(--light); border-radius: 10px; padding: 15px; margin-bottom: 12px; }
+  .summary-card h4 { font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .summary-item { font-size: 14px; color: var(--dark); padding: 4px 0; border-bottom: 1px solid var(--border); line-height: 1.4; }
+  .summary-item:last-child { border-bottom: none; }
+  .summary-item strong { color: var(--gray); font-size: 11px; font-weight: 600; display: block; }
+
+  /* ── NAV BAR ── */
+  .nav-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: white;
+    border-top: 1px solid var(--border); padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    display: flex; gap: 10px; z-index: 200; box-shadow: 0 -4px 16px rgba(0,0,0,0.08);
+  }
+  .btn { flex: 1; padding: 14px; border-radius: 10px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn:active { transform: scale(0.97); }
+  .btn-back { background: var(--light); color: var(--dark); flex: 0 0 auto; width: 48px; font-size: 18px; }
+  .btn-next { background: var(--red); color: white; }
+  .btn-pdf { background: var(--green); color: white; }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; top: 100px; left: 50%; transform: translateX(-50%) translateY(-20px); background: var(--dark); color: white; padding: 10px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── SPINNER ── */
+  .spinner { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.92); z-index: 999; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+  .spinner.show { display: flex; }
+  .spin { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--red); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner p { font-size: 14px; font-weight: 600; color: var(--gray); }
+
+  /* ── MODAL (caption) ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 500; align-items: flex-end; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 20px 20px 0 0; padding: 22px 18px; padding-bottom: max(22px, env(safe-area-inset-bottom)); width: 100%; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+  .modal input { margin-bottom: 12px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .btn-cancel { background: var(--light); color: var(--dark); flex: 1; }
+  .btn-confirm { background: var(--red); color: white; flex: 2; }
+
+  /* ── LOGIN / CADASTRO OVERLAY ── */
+  .login-overlay {
+    position: fixed; inset: 0; background: var(--navy);
+    z-index: 9999; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .login-box {
+    background: #fff; border-radius: 20px; padding: 32px 24px;
+    width: 100%; max-width: 380px; box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+  }
+  .login-logo { text-align: center; margin-bottom: 24px; }
+  .login-logo .login-title { font-size: 20px; font-weight: 700; color: var(--navy); margin-top: 8px; }
+  .login-logo .login-sub { font-size: 13px; color: var(--gray); }
+  .login-input {
+    width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 15px; margin-bottom: 12px; outline: none;
+    transition: border-color .2s;
+  }
+  .login-input:focus { border-color: var(--navy); }
+  .btn-login {
+    width: 100%; padding: 14px; background: var(--navy); color: #fff;
+    border: none; border-radius: 10px; font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-bottom: 10px; transition: opacity .2s;
+  }
+  .btn-login:active { opacity: .8; }
+  .btn-register {
+    width: 100%; padding: 14px; background: #16a34a; color: #fff;
+    border: none; border-radius: 10px; font-size: 16px; font-weight: 700;
+    cursor: pointer; margin-bottom: 10px; transition: opacity .2s;
+  }
+  .btn-register:active { opacity: .8; }
+  .login-msg { text-align: center; font-size: 13px; color: var(--red); margin-top: 10px; min-height: 18px; }
+  .login-link {
+    text-align: center; font-size: 13px; color: var(--navy); margin-top: 12px;
+    cursor: pointer; text-decoration: underline;
+  }
+  .login-panel { display: block; }
+  .register-panel { display: none; }
+
+  /* ── OFFLINE BADGE ── */
+  #offlineBadge {
+    display: none; position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+    background: #f59e0b; color: #fff; font-size: 12px; font-weight: 700;
+    padding: 4px 14px; border-radius: 20px; z-index: 10000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+
+  /* ── CAPTAR IMÓVEIS ── */
+  #captarMap { width: 100%; }
+  .leaflet-bairro-label {
+    background: rgba(204,0,0,0.85) !important;
+    border: none !important; border-radius: 6px !important;
+    color: #fff !important; font-size: 12px !important;
+    font-weight: 700 !important; padding: 3px 8px !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2) !important;
+  }
+  .leaflet-bairro-label::before { display: none !important; }
+
+  /* ── HISTORY OVERLAY ── */
+  .history-overlay {
+    position: fixed; inset: 0; background: #f3f4f6;
+    z-index: 500; display: none; flex-direction: column;
+  }
+  .history-header {
+    background: var(--navy); padding: 16px; display: flex;
+    align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .history-header h2 { color: #fff; font-size: 18px; flex: 1; }
+  .btn-close-history {
+    background: rgba(255,255,255,0.15); border: none; color: #fff;
+    border-radius: 8px; padding: 8px 14px; font-size: 14px; cursor: pointer;
+  }
+  .history-body { flex: 1; overflow-y: auto; padding: 16px; flex-direction: column; }
+  .history-card {
+    background: #fff; border-radius: 14px; margin-bottom: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .history-card-header {
+    display: flex; align-items: center; padding: 14px 16px;
+    cursor: pointer; gap: 12px;
+  }
+  .history-card-main { flex: 1; }
+  .history-prop { font-weight: 700; font-size: 15px; color: var(--dark); }
+  .history-addr { font-size: 13px; color: var(--gray); margin-top: 2px; }
+  .history-meta { font-size: 11px; color: #aaa; margin-top: 4px; }
+  .status-badge {
+    border-radius: 20px; padding: 4px 10px; font-size: 11px;
+    font-weight: 700; white-space: nowrap; flex-shrink: 0;
+  }
+  .status-pendente  { background: #fef3c7; color: #92400e; }
+  .status-captado   { background: #d1fae5; color: #065f46; }
+  .status-nao-captado { background: #fee2e2; color: #991b1b; }
+  .status-followup  { background: #e0e7ff; color: #3730a3; }
+  .history-card-body { padding: 0 16px 16px; border-top: 1px solid var(--border); }
+  .status-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 10px; }
+  .sbtn {
+    padding: 8px 12px; border: none; border-radius: 8px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .sbtn-captado  { background: #d1fae5; color: #065f46; }
+  .sbtn-nao      { background: #fee2e2; color: #991b1b; }
+  .sbtn-followup { background: #e0e7ff; color: #3730a3; }
+  .sbtn-pendente { background: #fef3c7; color: #92400e; }
+  .sbtn-save     { background: var(--navy); color: #fff; margin-top: 8px; width: 100%; padding: 10px; }
+  .history-detail { font-size: 13px; color: var(--dark); margin-bottom: 4px; }
+  .obs-area textarea {
+    width: 100%; padding: 10px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-size: 14px; resize: vertical; margin-top: 10px;
+    font-family: inherit;
+  }
+  .history-empty { text-align: center; padding: 40px 20px; color: var(--gray); }
+  .history-loading { text-align: center; padding: 40px; color: var(--gray); }
+
+  /* ── HISTORY BTN no header ── */
+  .btn-history {
+    background: rgba(255,255,255,0.15); border: none; color: #fff;
+    border-radius: 8px; padding: 6px 10px; font-size: 18px; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .btn-logout {
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.7); border-radius: 8px; padding: 4px 8px;
+    font-size: 11px; cursor: pointer; flex-shrink: 0;
+  }
+  .user-email {
+    font-size: 10px; color: rgba(255,255,255,0.5); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; max-width: 100px;
+  }
+
+</style>
+</head>
+<body>
+
+
+<!-- ══ HOME SCREEN ══ -->
+<div id="homeScreen" style="display:none;position:fixed;inset:0;z-index:300;background:#f3f4f6;overflow-y:auto;">
+
+  <!-- ── HERO HEADER ── -->
+  <div style="background:linear-gradient(170deg,#050e1e 0%,#0a1628 60%,#122040 100%);padding:28px 20px 30px;text-align:center;position:relative;">
+
+    <!-- Top row: balloon + logout -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;">
+      <svg viewBox="0 0 90 110" style="height:44px;width:auto;" xmlns="http://www.w3.org/2000/svg">
+        <defs><clipPath id="bci2"><path d="M45 7 C24 7 7 24 7 45 C7 68 45 103 45 103 C45 103 83 68 83 45 C83 24 66 7 45 7Z"/></clipPath></defs>
+        <rect width="90" height="110" fill="none"/>
+        <path d="M45 3 C20 3 3 21 3 45 C3 70 45 107 45 107 C45 107 87 70 87 45 C87 21 70 3 45 3Z" fill="white"/>
+        <g clip-path="url(#bci2)">
+          <rect x="0" y="0" width="45" height="50" fill="#6B0000"/>
+          <rect x="45" y="0" width="45" height="50" fill="#D10000"/>
+          <rect x="0" y="50" width="90" height="14" fill="#ECE7DC"/>
+          <rect x="0" y="64" width="45" height="50" fill="#00103A"/>
+          <rect x="45" y="64" width="45" height="50" fill="#003DB5"/>
+        </g>
+      </svg>
+
+      <!-- REMAX Noble text -->
+      <div style="text-align:center;flex:1;">
+        <div style="font-family:Impact,Arial,sans-serif;font-size:20px;color:#fff;line-height:1;letter-spacing:1px;">REMAX</div>
+        <div style="font-size:8px;color:rgba(255,255,255,0.65);letter-spacing:3px;margin-top:1px;">NOBLE</div>
+      </div>
+
+      <button onclick="doLogout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.25);color:rgba(255,255,255,0.75);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;">Sair</button>
+    </div>
+
+    <!-- Foto do corretor (grande, centralizada) -->
+    <div id="homeBrokerPhoto"
+      style="width:100px;height:100px;border-radius:50%;background:#1e3055;overflow:hidden;
+             margin:0 auto 12px;display:flex;align-items:center;justify-content:center;
+             font-size:40px;border:3px solid rgba(255,255,255,0.25);box-shadow:0 4px 20px rgba(0,0,0,0.4);">👤</div>
+
+    <!-- Nome -->
+    <div id="homeBrokerName" style="font-size:20px;font-weight:700;color:#fff;line-height:1.2;">Bem-vindo!</div>
+    <!-- CRECI / telefone -->
+    <div id="homeBrokerInfo" style="font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px;">Toque em Meu Cadastro para completar seu perfil.</div>
+    <!-- Email -->
+    <div id="homeUserEmail" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
+
+    <!-- Adriano Aguirre logo — HTML/CSS com Cormorant Garamond, versão home -->
+    <div style="margin-top:24px;display:flex;justify-content:center;">
+      <div class="aa-logo aa-lg">
+        <span class="aa-word">ADRIANO</span>
+        <div class="aa-rules"><span></span><span></span></div>
+        <span class="aa-word">AGUIRRE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ALERTAS DE MARKETING ── -->
+  <div id="marketingAlerts" style="padding:0 16px 4px;max-width:480px;margin:0 auto;display:none;">
+    <div style="background:#fff3cd;border:1px solid #fbbf24;border-radius:12px;padding:12px 14px;margin-bottom:8px;">
+      <div style="font-size:12px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📣 Relatórios Pendentes / Próximos</div>
+      <div id="marketingAlertsList" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+  </div>
+
+  <!-- ── BOTÕES ── -->
+  <div style="padding:20px 16px;max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:12px;">
+    <button onclick="startNovaVisita()" style="background:#0a1628;color:#fff;border:none;border-radius:14px;padding:18px 20px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;text-align:left;width:100%;">
+      <span style="font-size:26px;flex-shrink:0;">🏠</span>
+      <div>
+        <div>Nova Visita</div>
+        <div style="font-size:12px;font-weight:400;opacity:0.7;margin-top:2px;">Iniciar ficha de visita a imóvel</div>
+      </div>
+    </button>
+    <button onclick="openBrokerModal()" style="background:#fff;color:#0a1628;border:2px solid #e5e7eb;border-radius:14px;padding:18px 20px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;text-align:left;width:100%;">
+      <span style="font-size:26px;flex-shrink:0;">👤</span>
+      <div>
+        <div>Meu Cadastro</div>
+        <div style="font-size:12px;font-weight:400;color:#6b7280;margin-top:2px;">Editar nome, CRECI, telefone e foto</div>
+      </div>
+    </button>
+    <button onclick="openHistory()" style="background:#fff;color:#0a1628;border:2px solid #e5e7eb;border-radius:14px;padding:18px 20px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;text-align:left;width:100%;">
+      <span style="font-size:26px;flex-shrink:0;">📋</span>
+      <div>
+        <div>Histórico de Visitas</div>
+        <div style="font-size:12px;font-weight:400;color:#6b7280;margin-top:2px;">Ver e gerenciar visitas realizadas</div>
+      </div>
+    </button>
+    <button onclick="openCaptar()" style="background:#fff;color:#0a1628;border:2px solid #e5e7eb;border-radius:14px;padding:18px 20px;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:14px;text-align:left;width:100%;">
+      <span style="font-size:26px;flex-shrink:0;">🗺️</span>
+      <div>
+        <div>Captar Imóveis</div>
+        <div style="font-size:12px;font-weight:400;color:#6b7280;margin-top:2px;">Mapa do Bairro Dores · prospecção</div>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- ══ BROKER MODAL ══ -->
+<div id="brokerModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:900;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+      <h2 style="font-size:18px;font-weight:700;color:#0a1628;">Meu Cadastro</h2>
+      <button onclick="closeBrokerModal()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <!-- Foto -->
+    <div style="text-align:center;margin-bottom:20px;">
+      <div id="modalBrokerPhotoWrap" style="width:96px;height:96px;border-radius:50%;border:2px dashed #e5e7eb;margin:0 auto 10px;background:#f3f4f6;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:pointer;" onclick="document.getElementById('modalBrokerPhotoInput').click()">
+        <span id="modalBrokerPhotoIcon" style="font-size:36px;">👤</span>
+        <img id="modalBrokerPhotoImg" style="width:100%;height:100%;object-fit:cover;display:none;">
+      </div>
+      <input type="file" id="modalBrokerPhotoInput" accept="image/*" style="display:none" onchange="handleBrokerPhotoModal(this)">
+      <button onclick="document.getElementById('modalBrokerPhotoInput').click()" style="background:none;border:1px solid #e5e7eb;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;color:#6b7280;">📷 Alterar foto</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Nome completo *</label>
+        <input type="text" id="modalCorretorNome" placeholder="Nome do corretor" autocomplete="name" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;">
+          <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">CRECI</label>
+          <input type="text" id="modalCorretorCreci" placeholder="Nº CRECI" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:13px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Telefone</label>
+          <input type="tel" id="modalCorretorTelefone" placeholder="(00) 00000-0000" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:15px;outline:none;">
+        </div>
+      </div>
+      <!-- Bairros de atuação -->
+      <div style="border-top:1px solid #f3f4f6;padding-top:14px;">
+        <label style="font-size:13px;font-weight:700;color:#0a1628;display:block;margin-bottom:4px;">📍 Bairros de Atuação</label>
+        <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">Selecione os bairros onde você atua. O bairro principal (azul) aparece em destaque no mapa.</p>
+        <!-- Bairro principal -->
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:4px;">Bairro principal (foco de captação)</label>
+          <select id="bairroPrincipal" style="width:100%;padding:10px;border:1.5px solid #cc0000;border-radius:8px;font-size:14px;outline:none;background:#fff;color:#0a1628;font-weight:600;">
+          </select>
+        </div>
+        <!-- Multi-select -->
+        <div style="font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Outros bairros:</div>
+        <div id="bairrosGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;max-height:220px;overflow-y:auto;border:1px solid #e5e7eb;border-radius:8px;padding:8px;background:#fafafa;">
+          <!-- preenchido via JS -->
+        </div>
+      </div>
+      <button onclick="saveBrokerModal()" style="background:#0a1628;color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;">💾 Salvar dados</button>
+    </div>
+  </div>
+</div>
+
+<!-- SPINNER -->
+<div class="spinner" id="spinner"><div class="spin"></div><p>Gerando PDF...</p></div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- MODAL EXCLUIR VISITA com senha -->
+<div id="deleteModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px 20px;width:90%;max-width:360px;margin:auto;">
+    <div style="font-size:18px;font-weight:700;color:#0a1628;margin-bottom:6px;">🗑️ Excluir Visita</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Esta ação não pode ser desfeita. Confirme com sua senha para excluir.</div>
+    <input id="deletePassword" type="password" placeholder="Sua senha de acesso"
+      style="width:100%;padding:12px;border:1px solid #e5e7eb;border-radius:10px;font-size:14px;margin-bottom:8px;">
+    <div id="deleteMsg" style="font-size:12px;color:#dc2626;min-height:16px;margin-bottom:12px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="fecharDeleteModal()" style="flex:1;padding:12px;background:#f3f4f6;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Cancelar</button>
+      <button onclick="executarExclusao()" style="flex:1;padding:12px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CAPTAR IMÓVEIS OVERLAY ══ -->
+<div id="captarScreen" style="display:none;position:fixed;inset:0;z-index:500;background:#f3f4f6;flex-direction:column;overflow:hidden;">
+
+  <!-- Header -->
+  <div style="background:#0a1628;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <button onclick="closeCaptar()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;">← Voltar</button>
+    <div style="flex:1;">
+      <div style="color:#fff;font-size:17px;font-weight:700;">🗺️ Captar Imóveis</div>
+      <div style="color:rgba(255,255,255,0.5);font-size:11px;">Bairro Dores · Santa Maria / RS</div>
+    </div>
+    <button onclick="abrirFormProspect()" style="background:#cc0000;border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">+ Adicionar</button>
+  </div>
+
+  <!-- Mapa -->
+  <div id="captarMap" style="height:280px;flex-shrink:0;z-index:1;"></div>
+
+  <!-- ── COLAR LINK ── -->
+  <div style="padding:10px 12px;background:#f0fdf4;border-bottom:2px solid #86efac;flex-shrink:0;">
+    <div style="font-size:12px;font-weight:800;color:#166534;margin-bottom:6px;">📋 Colar link do anúncio — extrai dados automaticamente</div>
+    <div style="display:flex;gap:6px;">
+      <input id="linkParaExtrair" type="url" placeholder="Cole aqui o link do ZAP, VivaReal, OLX..."
+        style="flex:1;padding:9px 10px;border:1.5px solid #86efac;border-radius:8px;font-size:13px;outline:none;background:#fff;">
+      <button onclick="extrairEAdicionarProspect()"
+        style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+        🔍 Extrair
+      </button>
+    </div>
+    <div id="extrairStatus" style="font-size:11px;color:#166534;margin-top:4px;min-height:14px;"></div>
+  </div>
+
+  <!-- Busca nos portais -->
+  <div style="padding:10px 12px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
+    <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Buscar no Bairro Dores:</div>
+    <!-- ZAP por tipo -->
+    <div style="margin-bottom:6px;">
+      <span style="font-size:10px;font-weight:700;color:#f3841e;text-transform:uppercase;letter-spacing:.3px;">ZAP Imóveis →</span>
+      <span style="display:inline-flex;gap:5px;margin-left:4px;flex-wrap:wrap;">
+        <button onclick="abrirPortal('https://www.zapimoveis.com.br/venda/imoveis/rs+santa-maria++n-sra-das-dores/')"
+          style="background:#f3841e;color:#fff;border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">Todos</button>
+        <button onclick="abrirPortal('https://www.zapimoveis.com.br/venda/casas/rs+santa-maria++n-sra-das-dores/')"
+          style="background:#fff;color:#f3841e;border:1.5px solid #f3841e;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">Casas</button>
+        <button onclick="abrirPortal('https://www.zapimoveis.com.br/venda/apartamentos/rs+santa-maria++n-sra-das-dores/')"
+          style="background:#fff;color:#f3841e;border:1.5px solid #f3841e;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">Aptos</button>
+        <button onclick="abrirPortal('https://www.zapimoveis.com.br/venda/terrenos-lotes-condominios/rs+santa-maria++n-sra-das-dores/')"
+          style="background:#fff;color:#f3841e;border:1.5px solid #f3841e;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;">Terrenos</button>
+      </span>
+    </div>
+    <!-- Outros portais -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button onclick="abrirPortal('https://www.vivareal.com.br/venda/rio-grande-do-sul/santa-maria/bairros/nossa-senhora-das-dores/')"
+        style="background:#0077cc;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">VivaReal</button>
+      <button onclick="abrirPortal('https://www.olx.com.br/imoveis/estado-rs?q=nossa+senhora+das+dores+santa+maria')"
+        style="background:#6e0ad6;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">OLX</button>
+      <button onclick="abrirPortal('https://www.chavesnamao.com.br/imoveis-a-venda/rs-santa-maria/nossa-senhora-das-dores/')"
+        style="background:#1a8a4a;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Chaves na Mão</button>
+      <button onclick="abrirPortal('https://www.attria.com.br/venda/rs/santa-maria/nossa-senhora-das-dores')"
+        style="background:#0a1628;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">Attria</button>
+    </div>
+  </div>
+
+  <!-- Lista de prospects -->
+  <div style="flex:1;overflow-y:auto;padding:12px;" id="captarList">
+    <div style="text-align:center;color:#9ca3af;padding:24px;font-size:14px;">Nenhum imóvel cadastrado ainda.<br>Toque em <strong>+ Adicionar</strong> para incluir.</div>
+  </div>
+</div>
+
+<!-- MODAL: Adicionar Prospect -->
+<div id="prospectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1100;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div id="prospectModalTitle" style="font-size:16px;font-weight:700;color:#0a1628;">Cadastrar Imóvel</div>
+      <button onclick="fecharFormProspect()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">ENDEREÇO COMPLETO *</label>
+        <div style="display:flex;gap:6px;">
+          <input id="pEndereco" type="text" placeholder="Rua das Flores, 123 — Dores" style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+          <button onclick="geocodificarProspect()" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:10px 12px;font-size:12px;cursor:pointer;white-space:nowrap;" title="Buscar endereço digitado no mapa">📍 Localizar</button>
+        </div>
+        <div id="geoStatus" style="font-size:11px;color:#6b7280;margin-top:3px;"></div>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">PROPRIETÁRIO / CONTATO</label>
+        <input id="pProprietario" type="text" placeholder="Nome do proprietário" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <div style="flex:1;">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">VALOR PEDIDO</label>
+          <input id="pValor" type="text" placeholder="R$ 0,00" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">TIPO</label>
+          <select id="pTipo" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;">
+            <option value="">Selecione</option>
+            <option>Casa</option>
+            <option>Apartamento</option>
+            <option>Terreno</option>
+            <option>Comercial</option>
+            <option>Outro</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">LINK DO ANÚNCIO</label>
+        <input id="pLink" type="url" placeholder="https://www.zapimoveis.com.br/..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">OBSERVAÇÕES</label>
+        <textarea id="pObs" rows="2" placeholder="Ex: 3 dorms, boa localização, proprietário motivado..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:none;"></textarea>
+      </div>
+      <!-- Campos ocultos -->
+      <input type="hidden" id="pLat">
+      <input type="hidden" id="pLng">
+      <input type="hidden" id="pEditId">
+      <button onclick="salvarProspect()" id="btnSalvarProspect" style="background:#cc0000;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">💾 Salvar Imóvel</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logos">
+
+    <!-- ① BALÃO RE/MAX — fundo preto, borda branca, cores da bandeira c/ efeito 3D -->
+    <svg class="logo-balloon" viewBox="0 0 90 110" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <clipPath id="balloonInner">
+          <path d="M45 7 C24 7 7 24 7 45 C7 68 45 103 45 103 C45 103 83 68 83 45 C83 24 66 7 45 7Z"/>
+        </clipPath>
+      </defs>
+      <rect width="90" height="110" fill="#000000"/>
+      <path d="M45 3 C20 3 3 21 3 45 C3 70 45 107 45 107 C45 107 87 70 87 45 C87 21 70 3 45 3Z" fill="white"/>
+      <g clip-path="url(#balloonInner)">
+        <rect x="0"  y="0"  width="45" height="50" fill="#6B0000"/>
+        <rect x="45" y="0"  width="45" height="50" fill="#D10000"/>
+        <rect x="0"  y="50" width="90" height="14" fill="#ECE7DC"/>
+        <rect x="0"  y="64" width="45" height="50" fill="#00103A"/>
+        <rect x="45" y="64" width="45" height="50" fill="#003DB5"/>
+        <rect x="43.5" y="0" width="3" height="114" fill="rgba(0,0,0,0.18)"/>
+      </g>
+    </svg>
+
+    <div class="logo-sep"></div>
+
+    <!-- ② IMÓVEIS REMAX NOBLE -->
+    <div class="logo-remax-div">
+      <span class="rm-imoveis">IMÓVEIS</span>
+      <span class="rm-name">REMAX</span>
+      <span class="rm-noble">Noble</span>
+    </div>
+
+    <!-- ③ ADRIANO AGUIRRE — HTML/CSS com Cormorant Garamond -->
+    <div class="aa-logo aa-sm">
+      <span class="aa-word">ADRIANO</span>
+      <div class="aa-rules"><span></span><span></span></div>
+      <span class="aa-word">AGUIRRE</span>
+    </div>
+    <!-- Botão voltar para home -->
+    <div class="header-auth">
+      <button class="btn-history" onclick="showHomeScreen()" title="Início" style="font-size:20px;">🏠</button>
+    </div>
+
+  </div>
+  <div class="header-step">
+    <div class="step-info">
+      <div class="step-name" id="sectionName">Dados do Corretor</div>
+      <div class="step-count" id="stepCountLabel">Etapa 1 de 6</div>
+    </div>
+    <div class="header-badge" id="pct">0%</div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="step-dots" id="stepDots"></div>
+</div>
+
+<!-- ══════════════════════════════════
+     STEP 2 — IDENTIFICAÇÃO
+══════════════════════════════════ -->
+<div class="section active" id="step1">
+  <div class="section-header">
+    <div class="section-icon">🏠</div>
+    <div class="section-title">Identificação do Imóvel</div>
+  </div>
+  <div class="section-body">
+    <div class="field">
+      <label>Proprietário *</label>
+      <input type="text" id="proprietario" placeholder="Nome completo do proprietário" autocomplete="off">
+    </div>
+    <div class="field">
+      <label>Endereço / Imóvel *</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" id="imovel" placeholder="Rua, número, complemento, bairro" style="flex:1;">
+        <button type="button" id="btnGPS" onclick="buscarLocalizacao()" title="Usar localização atual"
+          style="flex-shrink:0;padding:0 13px;height:44px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:18px;cursor:pointer;">
+          📍
+        </button>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Data</label>
+        <input type="date" id="data">
+      </div>
+      <div class="field">
+        <label>Hora</label>
+        <input type="time" id="hora">
+      </div>
+    </div>
+    <div class="field">
+      <label>Link do anúncio (se houver)</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="url" id="linkAnuncio" placeholder="https://..." inputmode="url" style="flex:1;">
+        <button type="button" id="btnBuscarFotos" onclick="buscarFotosDoLink()"
+          title="Buscar fotos do anúncio automaticamente"
+          style="flex-shrink:0;padding:0 10px;height:44px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+          📷 Fotos
+        </button>
+      </div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Toque em "📷 Fotos" para importar as fotos do anúncio automaticamente</div>
+    </div>
+    <div class="field">
+      <label>Tipo de imóvel</label>
+      <div class="chips">
+        <label class="chip"><input type="radio" name="tipo" value="Apartamento"><label>Apartamento</label></label>
+        <label class="chip"><input type="radio" name="tipo" value="Duplex"><label>Duplex</label></label>
+        <label class="chip"><input type="radio" name="tipo" value="Casa"><label>Casa</label></label>
+        <label class="chip"><input type="radio" name="tipo" value="Sobrado"><label>Sobrado</label></label>
+        <label class="chip"><input type="radio" name="tipo" value="Terreno"><label>Terreno</label></label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Estado de conservação</label>
+      <div class="chips" style="gap:6px;">
+        <label class="r-chip excelente"><input type="radio" name="conservacao" value="Excelente"><label>Excelente</label></label>
+        <label class="r-chip bom"><input type="radio" name="conservacao" value="Bom"><label>Bom</label></label>
+        <label class="r-chip medio"><input type="radio" name="conservacao" value="Médio"><label>Médio</label></label>
+        <label class="r-chip ruim"><input type="radio" name="conservacao" value="Ruim"><label>Ruim</label></label>
+        <label class="r-chip pessimo"><input type="radio" name="conservacao" value="Péssimo"><label>Péssimo</label></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     STEP 3 — CARACTERÍSTICAS
+══════════════════════════════════ -->
+<div class="section" id="step2">
+  <div class="section-header">
+    <div class="section-icon">📐</div>
+    <div class="section-title">Características</div>
+  </div>
+  <div class="section-body">
+    <div class="field">
+      <label>Dormitórios</label>
+      <div class="chips">
+        <label class="chip"><input type="radio" name="dorms" value="1D"><label>1D</label></label>
+        <label class="chip"><input type="radio" name="dorms" value="2D"><label>2D</label></label>
+        <label class="chip"><input type="radio" name="dorms" value="3D"><label>3D</label></label>
+        <label class="chip"><input type="radio" name="dorms" value="4D"><label>4D</label></label>
+        <label class="chip"><input type="radio" name="dorms" value="5D+"><label>5D+</label></label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Suítes</label>
+      <div class="chips">
+        <label class="chip"><input type="radio" name="suites" value="0"><label>Nenhuma</label></label>
+        <label class="chip"><input type="radio" name="suites" value="1"><label>1 suíte</label></label>
+        <label class="chip"><input type="radio" name="suites" value="2"><label>2 suítes</label></label>
+        <label class="chip"><input type="radio" name="suites" value="3+"><label>3+ suítes</label></label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Banheiros</label>
+      <div class="chips">
+        <label class="chip"><input type="radio" name="banheiros" value="1B"><label>1B</label></label>
+        <label class="chip"><input type="radio" name="banheiros" value="2B"><label>2B</label></label>
+        <label class="chip"><input type="radio" name="banheiros" value="3B"><label>3B</label></label>
+        <label class="chip"><input type="radio" name="banheiros" value="4B"><label>4B</label></label>
+        <label class="chip"><input type="radio" name="banheiros" value="5B+"><label>5B+</label></label>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Vagas de garagem</label>
+        <input type="number" id="vagas" placeholder="0" min="0" max="20" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Área (m²)</label>
+        <input type="number" id="area" placeholder="0" min="0" inputmode="numeric">
+      </div>
+    </div>
+    <div class="field">
+      <label>Adicionais</label>
+      <div class="chips">
+        <label class="chip"><input type="checkbox" name="adicionais" value="Ar-condicionado"><label>Ar-condicionado</label></label>
+        <label class="chip"><input type="checkbox" name="adicionais" value="Semi-mobiliado"><label>Semi-mobiliado</label></label>
+        <label class="chip"><input type="checkbox" name="adicionais" value="Mobiliado"><label>Mobiliado</label></label>
+        <label class="chip"><input type="checkbox" name="adicionais" value="Área gourmet"><label>Área gourmet</label></label>
+        <label class="chip"><input type="checkbox" name="adicionais" value="Piscina"><label>Piscina</label></label>
+        <label class="chip"><input type="checkbox" name="adicionais" value="Churrasqueira"><label>Churrasqueira</label></label>
+        <label class="chip"><input type="checkbox" name="adicionais" value="Sacada"><label>Sacada</label></label>
+        <label class="chip"><input type="checkbox" name="adicionais" value="Academia"><label>Academia</label></label>
+      </div>
+    </div>
+    <div class="field">
+      <label>Valor pedido pelo proprietário (R$)</label>
+      <input type="text" id="valorPedido" placeholder="R$ 0,00" inputmode="numeric">
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     STEP 4 — PERGUNTAS
+══════════════════════════════════ -->
+<div class="section" id="step3">
+  <div class="section-header">
+    <div class="section-icon">💬</div>
+    <div class="section-title">Perguntas ao Proprietário</div>
+  </div>
+  <div class="section-body">
+    <div class="q-card">
+      <div class="q-text">O que levou vocês a comprar este imóvel?</div>
+      <textarea id="q1" placeholder="Resposta..."></textarea>
+    </div>
+    <div class="q-card">
+      <div class="q-text">O que mais gosta neste imóvel?</div>
+      <textarea id="q2" placeholder="Resposta..."></textarea>
+    </div>
+    <div class="q-card">
+      <div class="q-text">Se pudesse, o que mudaria para melhorá-lo?</div>
+      <textarea id="q3" placeholder="Resposta..."></textarea>
+    </div>
+    <div class="q-card">
+      <div class="q-text">Quanto tempo está à venda? O que te levou a decidir vender?</div>
+      <textarea id="q4" placeholder="Resposta..."></textarea>
+    </div>
+    <div class="q-card">
+      <div class="q-text">Em quais imobiliárias está? Quem é o corretor responsável por cada uma?</div>
+      <textarea id="q5" placeholder="Resposta..."></textarea>
+    </div>
+    <div class="q-card">
+      <div class="q-text">Como foi a precificação? Tem plano de marketing? Acompanhamento ou relatório?</div>
+      <textarea id="q6" placeholder="Resposta..."></textarea>
+    </div>
+    <div class="q-card">
+      <div class="q-text">Já teve visitas? Quantas? Como foi o feedback?</div>
+      <textarea id="q7" placeholder="Resposta..."></textarea>
+    </div>
+    <div class="q-card">
+      <div class="q-text">Observações gerais</div>
+      <textarea id="q8" placeholder="Anotações adicionais..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     STEP 5 — FOTOS
+══════════════════════════════════ -->
+<div class="section" id="step4">
+  <div class="section-header">
+    <div class="section-icon">📸</div>
+    <div class="section-title">Fotos do Imóvel</div>
+  </div>
+  <div class="section-body">
+
+    <!-- Opção de fonte das fotos -->
+    <div class="field">
+      <label>Fonte das fotos</label>
+      <div class="photo-option-btns">
+        <button class="photo-opt-btn selected" id="optAnuncio" onclick="setPhotoOption('anuncio')">
+          <span class="opt-icon">🔗</span>
+          <div class="opt-label">Fotos do anúncio</div>
+          <div class="opt-sub">Selecionar da galeria</div>
+        </button>
+        <button class="photo-opt-btn" id="optLocal" onclick="setPhotoOption('local')">
+          <span class="opt-icon">📷</span>
+          <div class="opt-label">Fotografar no local</div>
+          <div class="opt-sub">Usar câmera agora</div>
+        </button>
+      </div>
+      <div id="photoOptionNote" class="info-box" style="margin-top:0;margin-bottom:0;">
+        Selecione as fotos já salvas do anúncio na galeria do celular.
+      </div>
+    </div>
+
+    <div class="photo-section-label">📋 Matrícula / Documentação</div>
+    <div class="photo-grid" id="gridMatricula">
+      <button class="add-photo-btn" onclick="triggerPhoto('matricula')">
+        <span class="icon">➕</span><span>Adicionar</span>
+      </button>
+    </div>
+    <input type="file" id="fileMatricula" accept="image/*" multiple>
+
+    <div class="photo-section-label">🛏️ Interiores</div>
+    <div class="photo-grid" id="gridInteriores">
+      <button class="add-photo-btn" onclick="triggerPhoto('interiores')">
+        <span class="icon">➕</span><span>Adicionar</span>
+      </button>
+    </div>
+    <input type="file" id="fileInteriores" accept="image/*" multiple>
+
+    <div class="photo-section-label">🏘️ Fachada / Externa</div>
+    <div class="photo-grid" id="gridFachada">
+      <button class="add-photo-btn" onclick="triggerPhoto('fachada')">
+        <span class="icon">➕</span><span>Adicionar</span>
+      </button>
+    </div>
+    <input type="file" id="fileFachada" accept="image/*" multiple>
+
+    <div class="photo-section-label">⭐ Destaques / Diferenciais</div>
+    <div class="photo-grid" id="gridDestaques">
+      <button class="add-photo-btn" onclick="triggerPhoto('destaques')">
+        <span class="icon">➕</span><span>Adicionar</span>
+      </button>
+    </div>
+    <input type="file" id="fileDestaques" accept="image/*" multiple>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     STEP 6 — RESUMO
+══════════════════════════════════ -->
+<div class="section" id="step5">
+  <div class="section-header">
+    <div class="section-icon">✅</div>
+    <div class="section-title">Resumo da Visita</div>
+  </div>
+  <div class="section-body" id="summaryBody"></div>
+  <div style="padding:0 16px 16px;">
+    <button onclick="salvarVisita()" style="width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:8px;">
+      💾 Salvar Visita no Histórico
+    </button>
+  </div>
+</div>
+
+<!-- NAV BAR -->
+<div class="nav-bar">
+  <button class="btn btn-back" id="btnBack" onclick="prevStep()">←</button>
+  <button class="btn btn-next" id="btnNext" onclick="nextStep()">Próximo →</button>
+</div>
+
+<!-- CAPTION MODAL -->
+<div class="modal-overlay" id="captionModal">
+  <div class="modal">
+    <h3>Legenda da foto (opcional)</h3>
+    <input type="text" id="captionInput" placeholder="Ex: Sala de estar, varanda...">
+    <div class="modal-btns">
+      <button class="btn btn-cancel" onclick="closeModal()">Pular</button>
+      <button class="btn btn-confirm" onclick="confirmCaption()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ LOGIN OVERLAY ══ -->
+<!-- OFFLINE BADGE -->
+<div id="offlineBadge">📵 Sem internet — visitas salvas localmente</div>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+
+    <!-- ── PAINEL LOGIN ── -->
+    <div class="login-panel" id="loginPanel">
+      <div class="login-logo">
+        <div style="font-size:32px">🏠</div>
+        <div class="login-title">Ficha de Visita</div>
+        <div class="login-sub">REMAX Noble — Adriano Aguirre</div>
+      </div>
+      <input class="login-input" type="email" id="loginEmail" placeholder="Seu e-mail" autocomplete="email">
+      <input class="login-input" type="password" id="loginPassword" placeholder="Senha" autocomplete="current-password">
+      <button class="btn-login" onclick="doLogin()">Entrar</button>
+      <div class="login-msg" id="loginMsg"></div>
+      <div class="login-link" onclick="resetSenha()" style="font-size:12px;color:#6b7280;margin-top:4px;">Esqueci minha senha</div>
+      <div class="login-link" onclick="showRegisterPanel()">Não tem conta? Criar conta</div>
+    </div>
+
+    <!-- ── PAINEL CADASTRO ── -->
+    <div class="register-panel" id="registerPanel">
+      <div class="login-logo">
+        <div style="font-size:32px">✍️</div>
+        <div class="login-title">Criar Conta</div>
+        <div class="login-sub">Corretor REMAX Noble</div>
+      </div>
+      <input class="login-input" type="email" id="regEmail" placeholder="Seu e-mail" autocomplete="email">
+      <input class="login-input" type="password" id="regPassword" placeholder="Senha (mín. 6 caracteres)" autocomplete="new-password">
+      <input class="login-input" type="password" id="regConfirm" placeholder="Confirmar senha" autocomplete="new-password">
+      <button class="btn-register" onclick="doRegister()">Criar conta</button>
+      <div class="login-msg" id="registerMsg"></div>
+      <div class="login-link" onclick="showLoginPanel()">← Voltar para entrar</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ HISTORY OVERLAY ══ -->
+<div class="history-overlay" id="historyOverlay">
+  <div class="history-header">
+    <h2>📋 Histórico de Visitas</h2>
+    <button class="btn-close-history" onclick="closeHistory()">✕ Fechar</button>
+  </div>
+  <!-- Abas -->
+  <div style="display:flex;background:#0a1628;border-top:1px solid rgba(255,255,255,0.1);">
+    <button id="tabBtnHistorico" onclick="switchHistoryTab('historico')"
+      style="flex:1;padding:10px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;border-bottom:3px solid #cc0000;">
+      📋 Visitas
+    </button>
+    <button id="tabBtnRelatorios" onclick="switchHistoryTab('relatorios')"
+      style="flex:1;padding:10px;background:none;border:none;color:rgba(255,255,255,0.6);font-size:14px;font-weight:600;cursor:pointer;border-bottom:3px solid transparent;">
+      📊 Relatórios
+    </button>
+  </div>
+  <!-- Conteúdo aba Visitas -->
+  <div class="history-body" id="historyList" style="display:flex;flex-direction:column;">
+    <div class="history-loading">Carregando...</div>
+  </div>
+  <!-- Conteúdo aba Relatórios -->
+  <div class="history-body" id="relatorioContent" style="display:none;">
+    <div class="history-loading">Carregando relatórios...</div>
+  </div>
+</div>
+
+<script>
+
+// ═══ SUPABASE ═══
+const SUPA_URL = 'https://jxbydtedlrfaiehcmmdf.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4YnlkdGVkbHJmYWllaGNtbWRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3Nzk3MDYsImV4cCI6MjA5NjM1NTcwNn0.EhSYQbvGkCtEvdcXoVrBHIg742L1Krl1CYkgvXLBGJM';
+let supa = null;
+try {
+  supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+} catch(e) {
+  console.error('Supabase não carregou:', e);
+}
+let currentUser = null;
+
+async function initAuth() {
+  if (!supa) {
+    setLoginMsg('⚠️ Sem conexão com o servidor. Recarregue a página.');
+    return;
+  }
+  try {
+    const { data: { session } } = await supa.auth.getSession();
+    if (session?.user) {
+      currentUser = session.user;
+      document.getElementById('loginOverlay').style.display = 'none';
+      afterLogin();
+    } else {
+      document.getElementById('loginOverlay').style.display = 'flex';
+    }
+  } catch(e) {
+    console.error('initAuth error:', e);
+    setLoginMsg('⚠️ Erro ao verificar sessão. Faça login novamente.');
+  }
+  supa.auth.onAuthStateChange((_e, session) => {
+    // Ignorar eventos disparados pela verificação de senha na exclusão
+    if (window._verificandoSenha) return;
+    currentUser = session?.user || null;
+    if (currentUser) {
+      document.getElementById('loginOverlay').style.display = 'none';
+      afterLogin();
+    } else {
+      document.getElementById('loginOverlay').style.display = 'flex';
+    }
+  });
+}
+
+function afterLogin() {
+  updateOfflineBadge();
+  syncPendingVisits();
+  showHomeScreen();
+}
+
+async function doLogout() {
+  await supa.auth.signOut();
+  currentUser = null;
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+  showLoginPanel();
+  // Restaurar e-mail salvo (não apagar — para facilitar próximo login)
+  const savedEmail = localStorage.getItem('lastLoginEmail') || '';
+  document.getElementById('loginEmail').value = savedEmail;
+  document.getElementById('loginPassword').value = '';
+  // Restaurar senha salva se houver
+  const savedPwd = localStorage.getItem('lastLoginPwd') || '';
+  if (savedPwd) document.getElementById('loginPassword').value = savedPwd;
+}
+
+function showHomeScreen() {
+  document.getElementById('homeScreen').style.display = 'block';
+  for (let i=1;i<=STEPS;i++){ const s=document.getElementById('step'+i); if(s) s.classList.remove('active'); }
+  const nb = document.querySelector('.nav-bar'); if(nb) nb.style.display = 'none';
+  const hs = document.querySelector('.header-step'); if(hs) hs.style.display = 'none';
+  const saved = JSON.parse(localStorage.getItem('corretor') || '{}');
+  if (saved.nome) {
+    document.getElementById('homeBrokerName').textContent = saved.nome;
+    document.getElementById('homeBrokerInfo').textContent = [saved.creci ? 'CRECI ' + saved.creci : '', saved.telefone || ''].filter(Boolean).join('  ·  ') || 'Toque em Meu Cadastro para completar seu perfil.';
+  } else {
+    document.getElementById('homeBrokerInfo').textContent = 'Toque em Meu Cadastro para completar seu perfil.';
+  }
+  if (currentUser) document.getElementById('homeUserEmail').textContent = currentUser.email;
+  const foto = localStorage.getItem('corretorFoto');
+  if (foto) { document.getElementById('homeBrokerPhoto').innerHTML = '<img src="'+foto+'" style="width:100%;height:100%;object-fit:cover;">'; }
+  // Carrega alertas de plano de marketing
+  loadMarketingAlerts();
+}
+
+function startNovaVisita() {
+  document.getElementById('homeScreen').style.display = 'none';
+  const nb = document.querySelector('.nav-bar'); if(nb) nb.style.display = 'flex';
+  const hs = document.querySelector('.header-step'); if(hs) hs.style.display = 'flex';
+  currentStep = 1;
+  // Reabilita botão de salvar para nova visita
+  _salvando = false;
+  const btnSalvar = document.querySelector('[onclick="salvarVisita()"]');
+  if (btnSalvar) {
+    btnSalvar.disabled = false;
+    btnSalvar.innerHTML = '💾 Salvar Visita no Histórico';
+    btnSalvar.style.background = '';
+  }
+  updateUI();
+}
+
+function openBrokerModal() {
+  const saved = JSON.parse(localStorage.getItem('corretor') || '{}');
+  document.getElementById('modalCorretorNome').value    = saved.nome     || '';
+  document.getElementById('modalCorretorCreci').value   = saved.creci    || '';
+  document.getElementById('modalCorretorTelefone').value= saved.telefone || '';
+  const foto = localStorage.getItem('corretorFoto');
+  if (foto) {
+    document.getElementById('modalBrokerPhotoImg').src = foto;
+    document.getElementById('modalBrokerPhotoImg').style.display = 'block';
+    document.getElementById('modalBrokerPhotoIcon').style.display = 'none';
+  }
+
+  // Preenche select de bairro principal
+  const selPrincipal = document.getElementById('bairroPrincipal');
+  selPrincipal.innerHTML = BAIRROS_SM.map(b =>
+    `<option value="${b.id}" ${(saved.bairroPrincipal||'dores')===b.id?'selected':''}>${b.nome}</option>`
+  ).join('');
+
+  // Preenche grid de bairros (exclui o principal que já está no select)
+  const selecionados = saved.bairros || [];
+  const grid = document.getElementById('bairrosGrid');
+  grid.innerHTML = BAIRROS_SM.map(b => `
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:4px 6px;border-radius:6px;background:#fff;border:1px solid #e5e7eb;">
+      <input type="checkbox" value="${b.id}" ${selecionados.includes(b.id)?'checked':''}
+        style="accent-color:#cc0000;width:14px;height:14px;">
+      <span style="color:#374151;line-height:1.3;">${b.nome}</span>
+    </label>
+  `).join('');
+
+  document.getElementById('brokerModal').style.display = 'flex';
+}
+
+function closeBrokerModal() {
+  document.getElementById('brokerModal').style.display = 'none';
+}
+
+function comprimirFoto(file, maxPx, quality, callback) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > h) { if (w > maxPx) { h = Math.round(h * maxPx / w); w = maxPx; } }
+      else        { if (h > maxPx) { w = Math.round(w * maxPx / h); h = maxPx; } }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleBrokerPhotoModal(input) {
+  if (!input.files[0]) return;
+  comprimirFoto(input.files[0], 400, 0.75, src => {
+    document.getElementById('modalBrokerPhotoImg').src = src;
+    document.getElementById('modalBrokerPhotoImg').style.display = 'block';
+    document.getElementById('modalBrokerPhotoIcon').style.display = 'none';
+    try { localStorage.setItem('corretorFoto', src); }
+    catch(e) { showToast('⚠️ Foto muito grande. Tente uma imagem menor.'); }
+  });
+}
+
+function saveBrokerModal() {
+  const nome = document.getElementById('modalCorretorNome').value.trim();
+  if (!nome) { alert('Por favor informe seu nome.'); return; }
+  // Bairro principal
+  const bairroPrincipal = document.getElementById('bairroPrincipal').value || 'dores';
+  // Outros bairros selecionados
+  const checks = document.querySelectorAll('#bairrosGrid input[type=checkbox]:checked');
+  const bairros = [...checks].map(c => c.value);
+  const data = {
+    nome,
+    creci:           document.getElementById('modalCorretorCreci').value.trim(),
+    telefone:        document.getElementById('modalCorretorTelefone').value.trim(),
+    bairroPrincipal,
+    bairros,         // array de IDs dos bairros selecionados
+  };
+  localStorage.setItem('corretor', JSON.stringify(data));
+  closeBrokerModal();
+  showToast('✅ Cadastro salvo!');
+  showHomeScreen();
+}
+
+
+// ── BUSCAR FOTOS DO LINK DO ANÚNCIO ──
+async function buscarFotosDoLink() {
+  const url = document.getElementById('linkAnuncio').value.trim();
+  if (!url || !url.startsWith('http')) { showToast('⚠️ Informe um link válido (https://...) primeiro.'); return; }
+  const btn = document.getElementById('btnBuscarFotos');
+  btn.disabled = true; btn.textContent = '⏳';
+  showToast('🔍 Buscando fotos do anúncio...');
+
+  // ── Extrai URLs de imagem do HTML/JSON retornado pelo proxy ──
+  function extrairImagensDoHtml(html) {
+    const imgUrls = new Set();
+
+    // 1. og:image (meta tags — funciona em quase todos os portais)
+    for (const m of html.matchAll(/property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/gi)) imgUrls.add(m[1]);
+    for (const m of html.matchAll(/content=["']([^"']+)["'][^>]*property=["']og:image/gi)) imgUrls.add(m[1]);
+    if (imgUrls.size >= 3) return imgUrls;
+
+    // 2. __NEXT_DATA__ (ZAP Imóveis, Viva Real — Next.js SSR)
+    const nextMatch = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+    if (nextMatch) {
+      try {
+        const jsonStr = JSON.stringify(JSON.parse(nextMatch[1]));
+        for (const m of jsonStr.matchAll(/"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)(?:\?[^"\\]{0,120})?)"/gi)) {
+          const u = m[1];
+          if (!u.match(/icon|logo|avatar|sprite|pixel|map|banner|thumb/i) && u.length > 40) {
+            imgUrls.add(u);
+            if (imgUrls.size >= 20) break;
+          }
+        }
+      } catch(e) {}
+    }
+    if (imgUrls.size >= 3) return imgUrls;
+
+    // 3. __PRELOADED_STATE__ (OLX, outros)
+    const olxMatch = html.match(/(?:__PRELOADED_STATE__|window\.__STATE__|window\.__DATA__)["'\s]*[=:]["'\s]*([\s\S]{100,}?)<\/script>/i);
+    if (olxMatch) {
+      try {
+        // Tenta achar o JSON dentro da string capturada
+        const raw = olxMatch[1].trim().replace(/^['"]/, '').replace(/['"]$/, '');
+        const jsonStr = JSON.stringify(JSON.parse(raw));
+        for (const m of jsonStr.matchAll(/"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)(?:\?[^"\\]{0,120})?)"/gi)) {
+          const u = m[1];
+          if (!u.match(/icon|logo|avatar|sprite|pixel|map/i) && u.length > 40) {
+            imgUrls.add(u);
+            if (imgUrls.size >= 20) break;
+          }
+        }
+      } catch(e) {}
+    }
+    if (imgUrls.size >= 3) return imgUrls;
+
+    // 4. JSON genérico com campo url/image/photo/src
+    for (const m of html.matchAll(/"(?:url|src|image|photo|foto|imageUrl|image_url)"\s*:\s*"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)[^"\\]{0,120})"/gi)) {
+      const u = m[1];
+      if (!u.match(/icon|logo|avatar|sprite/i)) { imgUrls.add(u); if (imgUrls.size >= 20) break; }
+    }
+    if (imgUrls.size >= 3) return imgUrls;
+
+    // 5. data-src / src em <img>
+    for (const m of html.matchAll(/(?:data-src|data-lazy-src|data-original|src)=["'](https?:[^"']+\.(?:jpg|jpeg|png|webp)[^"']{0,80})["']/gi)) {
+      const u = m[1];
+      if (!u.match(/icon|logo|avatar|sprite|pixel|map/i) && u.length > 35) imgUrls.add(u);
+      if (imgUrls.size >= 20) break;
+    }
+    return imgUrls;
+  }
+
+  // ── Tenta buscar a página via dois proxies em sequência ──
+  async function fetchHtml(pageUrl) {
+    const proxies = [
+      'https://api.allorigins.win/get?url=' + encodeURIComponent(pageUrl),
+      'https://corsproxy.io/?' + encodeURIComponent(pageUrl),
+    ];
+    for (const px of proxies) {
+      try {
+        const resp = await fetch(px, { signal: AbortSignal.timeout(20000) });
+        if (!resp.ok) continue;
+        const ct = resp.headers.get('content-type') || '';
+        if (ct.includes('json')) {
+          const j = await resp.json();
+          const html = j.contents || j.html || '';
+          if (html.length > 500) return html;
+        } else {
+          const html = await resp.text();
+          if (html.length > 500) return html;
+        }
+      } catch(e) { /* tenta próximo */ }
+    }
+    return '';
+  }
+
+  // ── Download de imagem via proxy ──
+  async function fetchImagem(imgUrl) {
+    // weserv.nl é um proxy de imagem dedicado — muito mais confiável que proxies genéricos
+    // Também redimensiona para 1200px e converte para jpg automaticamente
+    const weserv = 'https://images.weserv.nl/?url=' + encodeURIComponent(imgUrl.replace(/^https?:\/\//, '')) + '&w=1200&output=jpg&il';
+    const proxies = [
+      weserv,
+      'https://corsproxy.io/?' + encodeURIComponent(imgUrl),
+      'https://api.allorigins.win/raw?url=' + encodeURIComponent(imgUrl),
+    ];
+    for (const px of proxies) {
+      try {
+        const ir = await fetch(px, { signal: AbortSignal.timeout(12000) });
+        if (!ir.ok) continue;
+        const blob = await ir.blob();
+        if ((blob.type.startsWith('image/') || blob.size > 3000) && blob.size > 2000) return blob;
+      } catch(e) {}
+    }
+    return null;
+  }
+
+  try {
+    const html = await fetchHtml(url);
+    if (!html) {
+      showToast('⚠️ Não consegui acessar o anúncio. Adicione fotos pela galeria.');
+      btn.disabled = false; btn.textContent = '📷 Fotos'; return;
+    }
+
+    const imgUrls = extrairImagensDoHtml(html);
+    const urls = [...imgUrls].slice(0, 15);
+
+    if (!urls.length) {
+      showToast('⚠️ Site não compartilhou fotos via link. Adicione pela galeria.');
+      btn.disabled = false; btn.textContent = '📷 Fotos'; return;
+    }
+
+    let count = 0;
+    for (const imgUrl of urls) {
+      const blob = await fetchImagem(imgUrl);
+      if (!blob) continue;
+      const src = await new Promise(res => {
+        comprimirFoto(new File([blob], 'foto.jpg', {type: blob.type}), 1200, 0.82, res);
+      });
+      savePhoto(src, 'interiores', '');
+      count++;
+      showToast(`📥 ${count} foto(s) importada(s)...`);
+      if (count >= 10) break;
+    }
+
+    if (count > 0) showToast(`✅ ${count} foto(s) importada(s) do anúncio!`);
+    else showToast('⚠️ Site bloqueou o download das imagens. Salve as fotos e adicione pela galeria.');
+  } catch(e) {
+    showToast('⚠️ Erro ao buscar fotos. Verifique a conexão.');
+  }
+  btn.disabled = false; btn.textContent = '📷 Fotos';
+}
+
+// ── SALVAR VISITA SEM PDF ──
+let _salvando = false;
+async function salvarVisita() {
+  if (!currentUser) { showToast('⚠️ Faça login para salvar.'); return; }
+  if (_salvando) { showToast('⏳ Aguarde, salvamento em andamento...'); return; }
+  _salvando = true;
+  const btn = document.querySelector('[onclick="salvarVisita()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+  const result = await saveVisitToCloud();
+  if (result === true) {
+    if (btn) btn.textContent = '✅ Salvo no histórico!';
+    showToast('✅ Visita salva com sucesso!');
+    // Após salvar com sucesso, desabilita o botão permanentemente nesta sessão de formulário
+    // para evitar duplicatas — só reabilita ao iniciar nova visita
+    if (btn) {
+      btn.textContent = '✅ Visita já salva';
+      btn.style.background = '#16a34a';
+      // NÃO reabilita — usuário precisa iniciar nova visita para salvar novamente
+      _salvando = false;
+      return;
+    }
+  } else if (result === 'offline') {
+    if (btn) btn.textContent = '📵 Salvo localmente';
+    showToast('📵 Sem internet — salvo localmente, será sincronizado ao conectar.');
+  } else {
+    if (btn) btn.textContent = '❌ Erro — tente novamente';
+  }
+  _salvando = false;
+  setTimeout(() => { if (btn) { btn.disabled = false; btn.innerHTML = '💾 Salvar Visita no Histórico'; btn.style.background = ''; } }, 4000);
+}
+
+// ── GEOLOCALIZAÇÃO ──
+async function buscarLocalizacao() {
+  if (!navigator.geolocation) { showToast('⚠️ Geolocalização não suportada neste dispositivo.'); return; }
+  const btn = document.getElementById('btnGPS');
+  btn.textContent = '⏳';
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const { latitude: lat, longitude: lon } = pos.coords;
+      try {
+        // Nominatim (OpenStreetMap) — zoom=18 = máxima precisão de rua
+        const resp = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1&accept-language=pt`,
+          { signal: AbortSignal.timeout(12000) }
+        );
+        const d = await resp.json();
+        const a = d.address || {};
+
+        // Montar endereço campo a campo primeiro (mais limpo)
+        const rua    = a.road || a.pedestrian || a.footway || a.path || a.cycleway || a.amenity || '';
+        const num    = a.house_number ? ', ' + a.house_number : '';
+        const bairro = a.suburb || a.neighbourhood || a.quarter || a.city_district || a.district || '';
+        const cidade = a.city || a.town || a.municipality || a.village || '';
+        const estado = a.state_code || a.ISO3166_2_lvl4?.replace('BR-','') || '';
+
+        let endereco = '';
+        if (rua) {
+          // Tem rua → compõe normalmente
+          endereco = [rua + num, bairro, estado ? cidade + '/' + estado : cidade]
+            .filter(Boolean).join(', ');
+        } else if (d.display_name) {
+          // Sem rua → usa display_name do Nominatim, que já vem ordenado:
+          // "Rua das Flores, 123, Jardim América, São Paulo, ..."
+          // Remove as partes genéricas do final (região, país)
+          const partes = d.display_name.split(',').map(s => s.trim());
+          // Filtra partes que são estados/regiões/país (geralmente as últimas 3-4)
+          const util = partes.filter(p =>
+            !/(região|sudeste|sul|norte|nordeste|centro|brasil|brazil)/i.test(p)
+          );
+          endereco = util.slice(0, 4).join(', ');
+        }
+
+        document.getElementById('imovel').value = endereco || d.display_name?.split(',').slice(0,3).join(',').trim() || '';
+        showToast('📍 Localização preenchida!');
+      } catch(e) {
+        showToast('⚠️ Não foi possível obter o endereço. Verifique a conexão.');
+      }
+      btn.textContent = '📍'; btn.disabled = false;
+    },
+    err => {
+      const msgs = { 1: 'Permissão de localização negada.', 2: 'Localização indisponível.', 3: 'Tempo esgotado.' };
+      showToast('⚠️ ' + (msgs[err.code] || 'Erro ao obter localização.'));
+      btn.textContent = '📍'; btn.disabled = false;
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
+
+// ── PAINÉIS LOGIN / CADASTRO ──
+function showLoginPanel() {
+  document.getElementById('loginPanel').style.display = 'block';
+  document.getElementById('registerPanel').style.display = 'none';
+  document.getElementById('loginMsg').textContent = '';
+}
+
+function showRegisterPanel() {
+  document.getElementById('loginPanel').style.display = 'none';
+  document.getElementById('registerPanel').style.display = 'block';
+  document.getElementById('registerMsg').textContent = '';
+}
+
+function setLoginMsg(msg, isError = true) {
+  const el = document.getElementById('loginMsg');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--red)' : '#16a34a';
+}
+
+function setRegisterMsg(msg, isError = true) {
+  const el = document.getElementById('registerMsg');
+  el.textContent = msg;
+  el.style.color = isError ? 'var(--red)' : '#16a34a';
+}
+
+async function doLogin() {
+  if (!supa) { alert('Sistema não carregado. Verifique sua conexão e recarregue a página.'); return; }
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) { setLoginMsg('⚠️ Preencha e-mail e senha.'); return; }
+  const btn = document.querySelector('#loginPanel .btn-login');
+  if (btn) { btn.textContent = '⏳ Entrando…'; btn.disabled = true; }
+  try {
+    const { data, error } = await supa.auth.signInWithPassword({ email, password });
+    if (error) {
+      const msg = error.message.includes('Invalid') ? 'E-mail ou senha incorretos.'
+                : error.message.includes('confirm')  ? 'Confirme seu e-mail antes de entrar.'
+                : error.message;
+      alert('Erro ao entrar:\n' + msg);
+      setLoginMsg('⚠️ ' + msg);
+      return;
+    }
+    currentUser = data.user;
+    // Salvar e-mail e senha para próximo login
+    try {
+      localStorage.setItem('lastLoginEmail', email);
+      localStorage.setItem('lastLoginPwd', password);
+    } catch(e) {}
+    document.getElementById('loginOverlay').style.display = 'none';
+    afterLogin();
+  } catch(e) {
+    alert('Erro inesperado:\n' + e.message);
+    setLoginMsg('⚠️ ' + e.message);
+  } finally {
+    if (btn) { btn.textContent = 'Entrar'; btn.disabled = false; }
+  }
+}
+
+async function resetSenha() {
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) { alert('Digite seu e-mail no campo acima primeiro.'); return; }
+  if (!supa) { alert('Sistema não carregado. Recarregue a página.'); return; }
+  const { error } = await supa.auth.resetPasswordForEmail(email);
+  if (error) { alert('Erro: ' + error.message); return; }
+  alert('✅ E-mail de recuperação enviado para ' + email + '\nVerifique sua caixa de entrada.');
+}
+
+async function doRegister() {
+  const email    = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm  = document.getElementById('regConfirm').value;
+  if (!email || !password || !confirm) { setRegisterMsg('Preencha todos os campos.'); return; }
+  if (password.length < 6) { setRegisterMsg('Senha deve ter ao menos 6 caracteres.'); return; }
+  if (password !== confirm) { setRegisterMsg('As senhas não coincidem.'); return; }
+  setRegisterMsg('Criando conta…', false);
+  const { data, error } = await supa.auth.signUp({ email, password });
+  if (error) { setRegisterMsg('Erro: ' + error.message); return; }
+  // Some Supabase configs require email confirmation; handle both cases
+  if (data.user && data.session) {
+    currentUser = data.user;
+    document.getElementById('loginOverlay').style.display = 'none';
+    afterLogin();
+  } else {
+    // Email confirmation required
+    setRegisterMsg('Conta criada! Verifique seu e-mail para confirmar.', false);
+  }
+}
+
+// ── OFFLINE SUPPORT ──
+function updateOfflineBadge() {
+  document.getElementById('offlineBadge').style.display = navigator.onLine ? 'none' : 'block';
+}
+
+async function syncPendingVisits() {
+  if (!currentUser || !navigator.onLine) return;
+  let pending = JSON.parse(localStorage.getItem('pendingVisits') || '[]');
+  if (!pending.length) return;
+
+  // Limpar visitas com formato antigo (tinham adicionais/dorms como coluna top-level)
+  // Essas visitas causam erro "column not found" e nunca sincronizam
+  const COLUNAS_VALIDAS = new Set([
+    'user_id','broker_name','broker_creci','broker_phone',
+    'endereco','proprietario_nome','proprietario_telefone',
+    'tipo_imovel','valor_pedido','data_visita',
+    'questionario','status','total_fotos','observacoes'
+  ]);
+  const visitasLimpas = pending.filter(v => {
+    const extras = Object.keys(v).filter(k => !COLUNAS_VALIDAS.has(k));
+    return extras.length === 0;
+  });
+  if (visitasLimpas.length < pending.length) {
+    console.warn(`syncPendingVisits: descartando ${pending.length - visitasLimpas.length} visita(s) com formato antigo.`);
+    localStorage.setItem('pendingVisits', JSON.stringify(visitasLimpas));
+    pending = visitasLimpas;
+  }
+  if (!pending.length) return;
+
+  const synced = [];
+  for (const visit of pending) {
+    const { error } = await supa.from('visits').insert(visit);
+    if (!error) synced.push(visit);
+    else console.warn('Falha ao sincronizar visita:', error.message);
+  }
+  if (synced.length) {
+    const remaining = pending.filter(v => !synced.includes(v));
+    localStorage.setItem('pendingVisits', JSON.stringify(remaining));
+    showToast(`✅ ${synced.length} visita(s) sincronizada(s) com a nuvem!`);
+  }
+}
+
+window.addEventListener('online',  () => { updateOfflineBadge(); syncPendingVisits(); });
+window.addEventListener('offline', () => { updateOfflineBadge(); });
+
+function buildVisitObject() {
+  const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
+  const nv = id => { const val = v(id); return val !== '—' ? val : null; };
+  const totalFotos = Object.values(photos).reduce((s, a) => s + a.length, 0);
+  return {
+    user_id:               currentUser.id,
+    broker_name:           corretor.nome      || null,
+    broker_creci:          corretor.creci     || null,
+    broker_phone:          corretor.telefone  || null,
+    endereco:              nv('imovel'),
+    proprietario_nome:     nv('proprietario'),
+    proprietario_telefone: nv('telProprietario'),
+    tipo_imovel:           document.querySelector('input[name="tipo"]:checked')?.value || null,
+    valor_pedido:          nv('valorPedido'),
+    data_visita:           nv('data'),
+    // Tudo em um único JSONB — sem colunas extras necessárias
+    questionario: {
+      q1: document.getElementById('q1')?.value || '',
+      q2: document.getElementById('q2')?.value || '',
+      q3: document.getElementById('q3')?.value || '',
+      q4: document.getElementById('q4')?.value || '',
+      q5: document.getElementById('q5')?.value || '',
+      q6: document.getElementById('q6')?.value || '',
+      q7: document.getElementById('q7')?.value || '',
+      q8: document.getElementById('q8')?.value || '',
+      // Características e identificação (sem colunas extras no banco)
+      hora:          nv('hora'),
+      link_anuncio:  nv('linkAnuncio'),
+      conservacao:   document.querySelector('input[name="conservacao"]:checked')?.value || null,
+      dorms:         document.querySelector('input[name="dorms"]:checked')?.value || null,
+      suites:        document.querySelector('input[name="suites"]:checked')?.value || null,
+      banheiros:     document.querySelector('input[name="banheiros"]:checked')?.value || null,
+      adicionais:    Array.from(document.querySelectorAll('input[name="adicionais"]:checked')).map(x => x.value).join(', ') || null,
+      vagas:         nv('vagas'),
+      area:          nv('area'),
+    },
+  };
+}
+
+async function saveVisitToCloud() {
+  if (!currentUser) return false;
+  if (!supa) { alert('Sistema não carregado. Recarregue a página.'); return false; }
+  const visit = buildVisitObject();
+
+  if (!navigator.onLine) {
+    const pending = JSON.parse(localStorage.getItem('pendingVisits') || '[]');
+    pending.push(visit);
+    localStorage.setItem('pendingVisits', JSON.stringify(pending));
+    return 'offline';
+  }
+
+  const { error } = await supa.from('visits').insert(visit);
+  if (error) {
+    alert('❌ ERRO AO SALVAR VISITA\n\n' + error.message +
+      '\n\n─────────────────\nPasso obrigatório:\n1. Acesse supabase.com → seu projeto\n2. SQL Editor → New Query\n3. Cole e execute o arquivo supabase_setup.sql\n4. Clique Run → deve aparecer "Success"');
+    const pending = JSON.parse(localStorage.getItem('pendingVisits') || '[]');
+    pending.push(visit);
+    localStorage.setItem('pendingVisits', JSON.stringify(pending));
+    return false;
+  }
+  return true;
+}
+
+// ═══ HISTORY ═══
+let _currentHistoryTab = 'historico';
+
+async function openHistory() {
+  document.getElementById('historyOverlay').style.display = 'flex';
+  _currentHistoryTab = 'historico';
+  _applyTabStyle('historico');
+  await loadHistory();
+}
+
+function closeHistory() {
+  document.getElementById('historyOverlay').style.display = 'none';
+}
+
+function switchHistoryTab(tab) {
+  _currentHistoryTab = tab;
+  _applyTabStyle(tab);
+  if (tab === 'historico') {
+    document.getElementById('historyList').style.display = 'flex';
+    document.getElementById('relatorioContent').style.display = 'none';
+    if (document.getElementById('historyList').children.length <= 1) loadHistory();
+  } else {
+    document.getElementById('historyList').style.display = 'none';
+    document.getElementById('relatorioContent').style.display = 'flex';
+    loadRelatorios();
+  }
+}
+
+function _applyTabStyle(tab) {
+  const btnH = document.getElementById('tabBtnHistorico');
+  const btnR = document.getElementById('tabBtnRelatorios');
+  if (tab === 'historico') {
+    btnH.style.background = 'rgba(255,255,255,0.15)'; btnH.style.color = '#fff'; btnH.style.borderBottomColor = '#cc0000';
+    btnR.style.background = 'none'; btnR.style.color = 'rgba(255,255,255,0.6)'; btnR.style.borderBottomColor = 'transparent';
+  } else {
+    btnR.style.background = 'rgba(255,255,255,0.15)'; btnR.style.color = '#fff'; btnR.style.borderBottomColor = '#cc0000';
+    btnH.style.background = 'none'; btnH.style.color = 'rgba(255,255,255,0.6)'; btnH.style.borderBottomColor = 'transparent';
+  }
+}
+
+async function loadRelatorios() {
+  const el = document.getElementById('relatorioContent');
+  el.innerHTML = '<div class="history-loading">⏳ Carregando relatórios...</div>';
+  if (!supa) { el.innerHTML = '<div class="history-empty">Sistema não carregado.</div>'; return; }
+
+  const { data, error } = await supa.from('visits').select('*').order('created_at', { ascending: false });
+  if (error) { el.innerHTML = `<div class="history-empty">❌ Erro: ${error.message}</div>`; return; }
+  if (!data?.length) { el.innerHTML = '<div class="history-empty">📭 Nenhuma visita registrada ainda.</div>'; return; }
+
+  // ─── Calcular métricas ───
+  const total = data.length;
+
+  // Por mês
+  const porMes = {};
+  data.forEach(v => {
+    const raw = v.data_visita || v.created_at;
+    const d = raw ? new Date(raw.length <= 10 ? raw + 'T12:00:00' : raw) : null;
+    if (!d || isNaN(d)) return;
+    const chave = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    if (!porMes[chave]) porMes[chave] = { label, count: 0 };
+    porMes[chave].count++;
+  });
+  const mesesOrdenados = Object.keys(porMes).sort().reverse();
+
+  // Por tipo
+  const porTipo = {};
+  data.forEach(v => { const t = v.tipo_imovel || 'Não informado'; porTipo[t] = (porTipo[t]||0)+1; });
+
+  // Por status
+  const statusLabel = { pendente:'⏳ Pendente', captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'🔔 Follow-up' };
+  const porStatus = {};
+  data.forEach(v => { const s = statusLabel[v.status] || '⏳ Pendente'; porStatus[s] = (porStatus[s]||0)+1; });
+
+  // Por conservação
+  const porConservacao = {};
+  data.forEach(v => { const c = v.questionario?.conservacao || 'Não informado'; porConservacao[c] = (porConservacao[c]||0)+1; });
+
+  // Valor médio pedido (remover não-numéricos)
+  const valores = data.map(v => {
+    if (!v.valor_pedido) return null;
+    const n = parseFloat(v.valor_pedido.replace(/[^0-9,]/g,'').replace(',','.'));
+    return isNaN(n) ? null : n;
+  }).filter(Boolean);
+  const mediaValor = valores.length ? (valores.reduce((a,b)=>a+b,0)/valores.length) : null;
+
+  // ─── Render ───
+  const bar = (count, max) => {
+    const pct = max ? Math.round((count/max)*100) : 0;
+    return `<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">
+      <div style="flex:1;height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
+        <div style="width:${pct}%;height:100%;background:#cc0000;border-radius:4px;"></div>
+      </div>
+      <span style="font-size:12px;font-weight:700;color:#0a1628;min-width:28px;text-align:right;">${count}</span>
+    </div>`;
+  };
+
+  const card = (title, content) => `
+    <div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <div style="font-size:13px;font-weight:800;color:#0a1628;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">${title}</div>
+      ${content}
+    </div>`;
+
+  // Visitas por mês
+  const maxMes = mesesOrdenados.length ? Math.max(...mesesOrdenados.map(k => porMes[k].count)) : 1;
+  const mesRows = mesesOrdenados.map(k => `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:13px;color:#374151;text-transform:capitalize;">${porMes[k].label}</div>
+      ${bar(porMes[k].count, maxMes)}
+    </div>`).join('');
+
+  // Por tipo
+  const maxTipo = Math.max(...Object.values(porTipo), 1);
+  const tipoRows = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]).map(([t,n]) => `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:13px;color:#374151;">${t}</div>
+      ${bar(n, maxTipo)}
+    </div>`).join('');
+
+  // Por status
+  const maxStatus = Math.max(...Object.values(porStatus), 1);
+  const statusRows = Object.entries(porStatus).sort((a,b)=>b[1]-a[1]).map(([s,n]) => `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:13px;color:#374151;">${s}</div>
+      ${bar(n, maxStatus)}
+    </div>`).join('');
+
+  // Por conservação
+  const maxConserv = Math.max(...Object.values(porConservacao), 1);
+  const conservRows = Object.entries(porConservacao).sort((a,b)=>b[1]-a[1]).map(([c,n]) => `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:13px;color:#374151;">${c}</div>
+      ${bar(n, maxConserv)}
+    </div>`).join('');
+
+  // Taxa de captação
+  const captados = data.filter(v => v.status === 'captado').length;
+  const txCaptacao = total ? Math.round((captados/total)*100) : 0;
+
+  el.innerHTML = `
+    ${card('📊 Resumo Geral', `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:#f3f4f6;border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:28px;font-weight:800;color:#cc0000;">${total}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">TOTAL DE VISITAS</div>
+        </div>
+        <div style="background:#f3f4f6;border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:28px;font-weight:800;color:#16a34a;">${captados}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">CAPTADOS</div>
+        </div>
+        <div style="background:#f3f4f6;border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:28px;font-weight:800;color:#0a1628;">${txCaptacao}%</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">TAXA DE CAPTAÇÃO</div>
+        </div>
+        <div style="background:#f3f4f6;border-radius:10px;padding:12px;text-align:center;">
+          <div style="font-size:20px;font-weight:800;color:#0a1628;">${mediaValor ? 'R$' + Math.round(mediaValor).toLocaleString('pt-BR') : '—'}</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;">VALOR MÉDIO</div>
+        </div>
+      </div>
+    `)}
+    ${card('📅 Visitas por Mês', mesRows || '<div style="color:#6b7280;font-size:13px;">Sem datas registradas.</div>')}
+    ${card('🏠 Tipo de Imóvel', tipoRows)}
+    ${card('📋 Status das Visitas', statusRows)}
+    ${card('🔍 Estado de Conservação', conservRows)}
+  `;
+}
+
+const Q_LABELS = [
+  'O que levou a comprar este imóvel?',
+  'O que mais gosta no imóvel?',
+  'O que mudaria para melhorá-lo?',
+  'Quanto tempo à venda? Por que vender?',
+  'Em quais imobiliárias está? Corretores?',
+  'Precificação / plano de marketing?',
+  'Já teve visitas? Quantas? Feedback?',
+  'Observações gerais',
+];
+
+async function loadHistory() {
+  if (!supa) { return; }
+  const listEl = document.getElementById('historyList');
+  listEl.innerHTML = '<div class="history-loading">⏳ Carregando visitas...</div>';
+  // Busca em ordem crescente para calcular número correto
+  const { data, error } = await supa.from('visits').select('*').order('created_at', { ascending: true });
+  if (error) {
+    listEl.innerHTML = `<div class="history-empty">❌ Erro: ${error.message}<br><small>Verifique se a tabela "visits" foi criada no Supabase.</small></div>`;
+    return;
+  }
+  if (!data?.length) { listEl.innerHTML = '<div class="history-empty">📭 Nenhuma visita registrada ainda.</div>'; return; }
+
+  const total = data.length;
+  const statusClass = { pendente:'status-pendente', captado:'status-captado', nao_captado:'status-nao-captado', follow_up:'status-followup' };
+  const statusLabel = { pendente:'⏳ Pendente', captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'🔔 Follow-up' };
+  const row = (label, val) => val ? `<div class="history-detail"><strong>${label}:</strong> ${val}</div>` : '';
+
+  // Mostra mais recente primeiro (reverso), mas numeração de 1 a N (mais antigo = #1)
+  const dataDesc = [...data].reverse();
+
+  listEl.innerHTML = dataDesc.map((vt, idx) => {
+    const visitNum = total - idx; // #total (mais recente) → #1 (mais antigo)
+    const sc = statusClass[vt.status] || 'status-pendente';
+    const sl = statusLabel[vt.status] || '⏳ Pendente';
+    const dt = vt.data_visita ? new Date(vt.data_visita + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+    const vid = vt.id;
+    const q = vt.questionario || {};
+    const qRows = Q_LABELS.map((lbl, i) => {
+      const val = q['q'+(i+1)];
+      return val ? `<div style="margin-bottom:8px;"><div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;">${lbl}</div><div style="font-size:13px;color:#374151;">${val}</div></div>` : '';
+    }).join('');
+
+    const planoMarketing = renderMarketingPlanHTML(vid, q, vt.valor_pedido);
+
+    return `
+    <div class="history-card" id="hcard-${vid}">
+      <div class="history-card-header" onclick="toggleCard('${vid}')">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+          <!-- Número da visita -->
+          <div style="background:#cc0000;color:#fff;border-radius:8px;padding:4px 8px;font-size:13px;font-weight:800;flex-shrink:0;min-width:36px;text-align:center;">#${visitNum}</div>
+          <div class="history-card-main">
+            <div class="history-prop">${vt.proprietario_nome || 'Proprietário não informado'}</div>
+            <div class="history-addr">${vt.endereco || '—'}</div>
+            <div class="history-meta">${dt}${(vt.questionario?.hora) ? ' às ' + vt.questionario.hora : ''} · ${vt.tipo_imovel || '—'}</div>
+          </div>
+        </div>
+        <span class="status-badge ${sc}" style="flex-shrink:0;">${sl}</span>
+      </div>
+      <div class="history-card-body" id="hbody-${vid}" style="display:none">
+        <div class="status-buttons">
+          <button class="sbtn sbtn-captado"  onclick="setStatus('${vid}','captado')">✅ Captado</button>
+          <button class="sbtn sbtn-nao"      onclick="setStatus('${vid}','nao_captado')">❌ Não Captado</button>
+          <button class="sbtn sbtn-followup" onclick="setStatus('${vid}','follow_up')">🔔 Follow-up</button>
+          <button class="sbtn sbtn-pendente" onclick="setStatus('${vid}','pendente')">⏳ Pendente</button>
+        </div>
+        <div style="margin-top:8px;text-align:right;">
+          <button onclick="confirmarExclusao('${vid}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;">🗑️ Excluir visita</button>
+        </div>
+
+        <div style="margin:12px 0;border-top:1px solid #f3f4f6;padding-top:12px;">
+          <div style="font-size:12px;font-weight:700;color:#0a1628;margin-bottom:8px;">📋 DADOS DA VISITA</div>
+          ${row('Corretor', vt.broker_name)}
+          ${row('CRECI', vt.broker_creci)}
+          ${row('Telefone corretor', vt.broker_phone)}
+          ${row('Proprietário', vt.proprietario_nome)}
+          ${row('Tel. proprietário', vt.proprietario_telefone)}
+          ${row('Endereço', vt.endereco)}
+          ${row('Tipo', vt.tipo_imovel)}
+          ${row('Conservação', vt.questionario?.conservacao)}
+          ${row('Dormitórios', vt.questionario?.dorms)}
+          ${row('Suítes', vt.questionario?.suites)}
+          ${row('Banheiros', vt.questionario?.banheiros)}
+          ${row('Vagas', vt.questionario?.vagas)}
+          ${row('Área', vt.questionario?.area ? vt.questionario.area + ' m²' : null)}
+          ${row('Adicionais', vt.questionario?.adicionais)}
+          ${row('Valor pedido', vt.valor_pedido)}
+          ${vt.questionario?.link_anuncio ? `<div class="history-detail"><strong>Link:</strong> <a href="${vt.questionario.link_anuncio}" target="_blank" style="color:#0a1628;">${vt.questionario.link_anuncio}</a></div>` : ''}
+        </div>
+
+        ${qRows ? `<div style="margin:12px 0;border-top:1px solid #f3f4f6;padding-top:12px;">
+          <div style="font-size:12px;font-weight:700;color:#0a1628;margin-bottom:8px;">💬 PERGUNTAS</div>
+          ${qRows}
+        </div>` : ''}
+
+        ${planoMarketing}
+
+        <div class="obs-area">
+          <textarea id="obs-${vid}" placeholder="Observações / follow-up..." rows="3">${vt.observacoes || ''}</textarea>
+          <button class="sbtn sbtn-save" onclick="saveObs('${vid}')">💾 Salvar observação</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── PLANO DE MARKETING ───────────────────────────────────────────
+
+function renderMarketingPlanHTML(vid, q, valorPedido) {
+  const inicio = q.data_inicio_gestao || '';
+  const valorInicial = valorPedido || '';
+
+  // Gera linha do cronograma de 15 em 15 dias por 6 meses (180 dias)
+  let cronograma = '';
+  if (inicio) {
+    const base = new Date(inicio + 'T12:00:00');
+    const hoje = new Date(); hoje.setHours(12,0,0,0);
+    for (let dias = 15; dias <= 180; dias += 15) {
+      const dt = new Date(base); dt.setDate(dt.getDate() + dias);
+      const dtStr = dt.toLocaleDateString('pt-BR');
+      const isPast = dt < hoje;
+      const isToday = dt.toDateString() === hoje.toDateString();
+      const isReajuste = dias % 45 === 0;
+      const reajusteKey = 'reajuste_' + dias;
+      const reajusteVal = q[reajusteKey] || '';
+
+      const rowBg = isToday ? '#fff3cd' : isPast ? '#f9fafb' : '#ffffff';
+      const dtColor = isPast ? '#9ca3af' : isToday ? '#d97706' : '#0a1628';
+
+      cronograma += `<div style="border:1px solid ${isReajuste ? '#fbbf24' : '#e5e7eb'};border-radius:10px;padding:10px 12px;margin-bottom:8px;background:${isReajuste ? '#fffbeb' : rowBg};">`;
+      cronograma += `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${isReajuste?'8':'0'}px;">`;
+      cronograma += `<div>`;
+      cronograma += `<div style="font-size:12px;font-weight:700;color:${dtColor};">D+${dias} — ${dtStr}${isToday?' <span style="color:#d97706;font-size:11px;">HOJE</span>':''}</div>`;
+      cronograma += `<div style="font-size:11px;color:#6b7280;margin-top:1px;">${isPast?'✅ Enviado':'📤 Relatório de marketing'}</div>`;
+      cronograma += `</div>`;
+      if (isReajuste) {
+        cronograma += `<span style="background:#fbbf24;color:#78350f;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;">REAJUSTE</span>`;
+      }
+      cronograma += `</div>`;
+      if (isReajuste) {
+        cronograma += `<div style="display:flex;gap:8px;align-items:center;">`;
+        cronograma += `<input id="reaj-${vid}-${dias}" type="text" value="${reajusteVal}" placeholder="Novo valor (ex: R$ 850.000)" style="flex:1;padding:8px 10px;border:1.5px solid #fbbf24;border-radius:8px;font-size:13px;outline:none;">`;
+        cronograma += `<button onclick="salvarReajuste('${vid}',${dias})" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">💾 Salvar</button>`;
+        cronograma += `</div>`;
+      }
+      cronograma += `</div>`;
+    }
+  }
+
+  return `
+  <div style="margin:12px 0;border-top:2px solid #0a1628;padding-top:12px;">
+    <div style="font-size:12px;font-weight:800;color:#0a1628;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">📅 Plano de Marketing</div>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:${inicio?'12':'0'}px;">
+      <div style="flex:1;">
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">DATA INÍCIO DA GESTÃO</label>
+        <input id="gestao-${vid}" type="date" value="${inicio}" style="width:100%;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+      </div>
+      <button onclick="salvarDataGestao('${vid}')" style="background:#cc0000;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;margin-bottom:0;">💾 Salvar</button>
+    </div>
+    ${inicio ? `
+    <div style="font-size:11px;color:#6b7280;margin-bottom:10px;">Cronograma de 15 em 15 dias · Reajuste de valor a cada 45 dias</div>
+    ${cronograma}
+    ` : `<div style="font-size:12px;color:#9ca3af;padding:8px 0;">Defina a data de início para gerar o cronograma automático.</div>`}
+  </div>`;
+}
+
+async function salvarDataGestao(vid) {
+  const val = document.getElementById('gestao-' + vid)?.value;
+  if (!val) { showToast('⚠️ Selecione uma data.'); return; }
+  // Busca questionario atual e mescla
+  const { data } = await supa.from('visits').select('questionario,valor_pedido').eq('id', vid).single();
+  const q = data?.questionario || {};
+  q.data_inicio_gestao = val;
+  const { error } = await supa.from('visits').update({ questionario: q }).eq('id', vid);
+  if (error) { showToast('❌ Erro ao salvar: ' + error.message); return; }
+  showToast('✅ Data de início salva!');
+  await loadHistory();
+  // Recarrega alertas na home
+  loadMarketingAlerts();
+}
+
+async function salvarReajuste(vid, dias) {
+  const val = document.getElementById(`reaj-${vid}-${dias}`)?.value;
+  const { data } = await supa.from('visits').select('questionario').eq('id', vid).single();
+  const q = data?.questionario || {};
+  q['reajuste_' + dias] = val;
+  const { error } = await supa.from('visits').update({ questionario: q }).eq('id', vid);
+  if (error) { showToast('❌ Erro: ' + error.message); return; }
+  showToast(`✅ Reajuste D+${dias} salvo!`);
+}
+
+// ─── ALERTAS DE MARKETING NA HOME ─────────────────────────────────
+
+async function loadMarketingAlerts() {
+  if (!supa || !currentUser) return;
+  const alertsDiv = document.getElementById('marketingAlerts');
+  const listDiv   = document.getElementById('marketingAlertsList');
+  if (!alertsDiv || !listDiv) return;
+
+  // Busca todas as visitas e filtra em JS (JSONB filtering varia por versão Supabase)
+  const { data } = await supa.from('visits').select('id,endereco,proprietario_nome,questionario,valor_pedido,status');
+
+  // Filtra apenas visitas com data_inicio_gestao definida
+  const comGestao = (data || []).filter(v => v.questionario?.data_inicio_gestao);
+  if (!comGestao.length) { alertsDiv.style.display = 'none'; return; }
+
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const limite = new Date(hoje); limite.setDate(limite.getDate() + 21); // próximos 21 dias
+
+  const itens = [];
+  comGestao.forEach(v => {
+    const q = v.questionario || {};
+    const inicio = q.data_inicio_gestao;
+    if (!inicio) return;
+    const base = new Date(inicio + 'T12:00:00');
+    // Encontra o próximo D+15, D+30... ainda não passado (ou de hoje)
+    for (let dias = 15; dias <= 180; dias += 15) {
+      const dt = new Date(base); dt.setDate(dt.getDate() + dias);
+      dt.setHours(0,0,0,0);
+      if (dt >= hoje && dt <= limite) {
+        const diffDias = Math.round((dt - hoje) / 86400000);
+        itens.push({
+          vid: v.id,
+          endereco: v.endereco || '—',
+          cliente: v.proprietario_nome || 'Proprietário',
+          dt, diffDias, dias,
+          isReajuste: dias % 45 === 0,
+        });
+        break; // só o próximo evento por imóvel
+      }
+    }
+  });
+
+  if (!itens.length) { alertsDiv.style.display = 'none'; return; }
+
+  // Ordena por data
+  itens.sort((a, b) => a.dt - b.dt);
+
+  listDiv.innerHTML = itens.map(it => {
+    const dtStr = it.dt.toLocaleDateString('pt-BR');
+    const urgencia = it.diffDias === 0 ? '🔴 HOJE' : it.diffDias <= 3 ? `🟠 ${it.diffDias}d` : `🟡 ${it.diffDias}d`;
+    const tag = it.isReajuste ? ' <span style="background:#fbbf24;color:#78350f;font-size:10px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px;">REAJUSTE</span>' : '';
+    return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;color:#0a1628;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${it.cliente}${tag}</div>
+        <div style="font-size:11px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${it.endereco}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:12px;font-weight:700;color:#92400e;">${urgencia}</div>
+        <div style="font-size:11px;color:#6b7280;">${dtStr}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  alertsDiv.style.display = 'block';
+}
+
+function toggleCard(id) {
+  const b = document.getElementById('hbody-' + id);
+  b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+
+async function setStatus(id, status) {
+  await supa.from('visits').update({ status }).eq('id', id);
+  await loadHistory();
+}
+
+async function saveObs(id) {
+  const obs = document.getElementById('obs-' + id)?.value || '';
+  const { error } = await supa.from('visits').update({ observacoes: obs }).eq('id', id);
+  if (!error) showToast('✅ Observação salva!');
+}
+
+// ─── EXCLUSÃO DE VISITA COM SENHA ───
+let _deleteTargetId = null;
+
+function confirmarExclusao(visitId) {
+  _deleteTargetId = visitId;
+  document.getElementById('deletePassword').value = '';
+  document.getElementById('deleteMsg').textContent = '';
+  document.getElementById('deleteModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('deletePassword').focus(), 100);
+}
+
+function fecharDeleteModal() {
+  _deleteTargetId = null;
+  document.getElementById('deleteModal').style.display = 'none';
+}
+
+async function executarExclusao() {
+  const senha = document.getElementById('deletePassword').value;
+  const msg   = document.getElementById('deleteMsg');
+  if (!senha) { msg.textContent = 'Informe sua senha.'; return; }
+  if (!_deleteTargetId || !currentUser) { fecharDeleteModal(); return; }
+
+  const btn = document.querySelector('#deleteModal button:last-child');
+  btn.textContent = '⏳ Verificando...'; btn.disabled = true;
+
+  // Mantém flag ativa DURANTE TODA a operação — onAuthStateChange pode disparar
+  // assincronamente depois que signInWithPassword resolve, então não resetamos
+  // a flag até depois de fechar o modal e remover o card.
+  window._verificandoSenha = true;
+
+  try {
+    const { error: authErr } = await supa.auth.signInWithPassword({
+      email: currentUser.email,
+      password: senha
+    });
+
+    if (authErr) {
+      // Senha errada: libera a flag e mostra erro
+      window._verificandoSenha = false;
+      msg.textContent = '❌ Senha incorreta. Tente novamente.';
+      btn.textContent = 'Excluir'; btn.disabled = false;
+      return;
+    }
+
+    // Senha correta — excluir a visita
+    const idParaExcluir = _deleteTargetId;
+    const { error: delErr } = await supa.from('visits').delete().eq('id', idParaExcluir);
+    if (delErr) {
+      window._verificandoSenha = false;
+      msg.textContent = 'Erro ao excluir: ' + delErr.message;
+      btn.textContent = 'Excluir'; btn.disabled = false;
+      return;
+    }
+
+    // Fechar modal e remover card ANTES de liberar a flag
+    _deleteTargetId = null;
+    document.getElementById('deleteModal').style.display = 'none';
+    document.getElementById('deletePassword').value = '';
+    document.getElementById('deleteMsg').textContent = '';
+    btn.textContent = 'Excluir'; btn.disabled = false;
+
+    const card = document.getElementById('hcard-' + idParaExcluir);
+    if (card) card.remove();
+
+    // Libera a flag com pequeno delay — garante que qualquer disparo tardio
+    // de onAuthStateChange já foi ignorado antes de liberar
+    setTimeout(() => { window._verificandoSenha = false; }, 600);
+    showToast('🗑️ Visita excluída.');
+
+  } catch(e) {
+    window._verificandoSenha = false;
+    msg.textContent = 'Erro inesperado: ' + e.message;
+    btn.textContent = 'Excluir'; btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CAPTAR IMÓVEIS — Mapa Bairro Dores + Prospecção
+// ═══════════════════════════════════════════════════════
+
+// Abre link externo sempre em nova aba — nunca navega na aba do app
+function abrirPortal(url) {
+  if (!url) return;
+  const a = document.createElement('a');
+  a.href = url;
+  a.target = '_blank';
+  a.rel = 'noopener noreferrer';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ── Todos os bairros de Santa Maria — RS ──
+// Coordenadas calculadas a partir do mapa oficial enviado pelo usuário
+const BAIRROS_SM = [
+  { id:'dores',       nome:'Nossa Senhora das Dores',        lat:-29.6910, lng:-53.8055 },
+  { id:'centro',      nome:'Centro',                          lat:-29.6850, lng:-53.8020 },
+  { id:'rosario',     nome:'Nossa Sra. do Rosário',           lat:-29.6640, lng:-53.8080 },
+  { id:'fatima',      nome:'Nossa Sra. de Fátima',            lat:-29.6970, lng:-53.8080 },
+  { id:'medianeira',  nome:'Nossa Sra. Medianeira',           lat:-29.7220, lng:-53.7980 },
+  { id:'perpetuo',    nome:'Nossa Sra. do Perpétuo Socorro',  lat:-29.6360, lng:-53.8010 },
+  { id:'salgadofilho',nome:'Salgado Filho',                   lat:-29.6500, lng:-53.8130 },
+  { id:'itarare',     nome:'Itararé',                         lat:-29.6500, lng:-53.7780 },
+  { id:'joaogoulart', nome:'Pres. João Goulart',              lat:-29.6670, lng:-53.7710 },
+  { id:'kmtres',      nome:'KM Três',                         lat:-29.6670, lng:-53.7530 },
+  { id:'novasantamarta',nome:'Nova Santa Marta',              lat:-29.6720, lng:-53.8450 },
+  { id:'juscelino',   nome:'Juscelino Kubitschek',            lat:-29.6910, lng:-53.8410 },
+  { id:'tancredo',    nome:'Tancredo Neves',                  lat:-29.7000, lng:-53.8670 },
+  { id:'cipriano',    nome:'Cipriano da Rocha',               lat:-29.7080, lng:-53.8580 },
+  { id:'pinheiro',    nome:'Pinheiro Machado',                lat:-29.7180, lng:-53.8400 },
+  { id:'duquecaxias', nome:'Duque de Caxias',                 lat:-29.7180, lng:-53.8160 },
+  { id:'cerrito',     nome:'Cerrito',                         lat:-29.7170, lng:-53.7760 },
+  { id:'saojose',     nome:'São José',                        lat:-29.7080, lng:-53.7450 },
+  { id:'camobi',      nome:'Bairro Camobi',                   lat:-29.7120, lng:-53.7230 },
+  { id:'platano',     nome:'Pé de Platano',                   lat:-29.6780, lng:-53.7240 },
+  { id:'urlândia',    nome:'Urlândia',                        lat:-29.7500, lng:-53.8010 },
+  { id:'moradas',     nome:'Moradas Santa Maria',             lat:-29.7550, lng:-53.7650 },
+  { id:'diacono',     nome:'Diácono J. L. Pozzobon',          lat:-29.7660, lng:-53.7580 },
+  { id:'tomazetti',   nome:'Tomazetti',                       lat:-29.7750, lng:-53.7800 },
+  { id:'santaantao',  nome:'Santo Antão',                     lat:-29.6100, lng:-53.8370 },
+  { id:'caturrita',   nome:'Caturrita',                       lat:-29.6400, lng:-53.8320 },
+  { id:'chacara',     nome:'Chácara das Flores',              lat:-29.6230, lng:-53.8100 },
+  { id:'agroindustrial',nome:'Agroindustrial',                lat:-29.6460, lng:-53.8620 },
+  { id:'boimorto',    nome:'Boi Morto',                       lat:-29.7380, lng:-53.8580 },
+  { id:'campestre',   nome:'Campestre do Menino Deus',        lat:-29.6040, lng:-53.7710 },
+];
+
+// Centro do Bairro Nossa Sra. das Dores — Santa Maria - RS
+const DORES_LAT = -29.6910;
+const DORES_LNG = -53.8055;
+const DORES_ZOOM = 15;
+
+let _captarMap = null;
+let _captarMarkers = {}; // id → marker
+let _doresLayer  = null; // polígono do bairro principal
+let _bairrosLayers = {}; // id → círculo dos demais bairros
+
+// Polígono do Bairro Nossa Sra. das Dores
+// Extraído da imagem Google Maps enviada pelo usuário.
+// Referência de calibração: Royal Plaza Shopping = (-29.6907°, -53.8079°)
+// Traçado seguindo a linha pontilhada vermelha/branca da demarcação.
+const DORES_POLY_COORDS = [
+  [-29.6860, -53.8125], // NW — R. Araripe Júnior / R. Machado de Assis
+  [-29.6813, -53.8089], // N  — subindo pela R. Abreu Antônio Coelho
+  [-29.6808, -53.8055], // N  — topo central (R. Srg. Floriano Carrion)
+  [-29.6852, -53.7989], // NE — virando para leste (Hospital da Brigada Militar)
+  [-29.6885, -53.7972], // E  — lado direito superior
+  [-29.6913, -53.7978], // E  — lado direito central
+  [-29.7002, -53.8010], // SE — descendo (Escola Mater / R. Alfredo Preigchadt)
+  [-29.7010, -53.8037], // S  — fundo direito
+  [-29.7008, -53.8076], // S  — fundo central (próx. Hospital São Francisco)
+  [-29.6984, -53.8135], // SW — fundo esquerdo
+  [-29.6961, -53.8135], // W  — lado esquerdo (R. Gen. Neto)
+  [-29.6860, -53.8125], // volta ao NW
+];
+
+function _desenharPoligonoFallback() {
+  if (_doresLayer) return;
+  _doresLayer = L.polygon(DORES_POLY_COORDS, {
+    color: '#cc0000', fillColor: '#cc0000', fillOpacity: 0.08, weight: 2.5, dashArray: '7,5'
+  }).addTo(_captarMap);
+  _doresLayer.bindTooltip('Nossa Senhora das Dores', {
+    permanent: true, direction: 'center', className: 'leaflet-bairro-label'
+  });
+  _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
+}
+
+async function _carregarPoligonoDores() {
+  if (!_captarMap) return;
+
+  // ── 1. Overpass API — funciona direto do browser (CORS habilitado) ──
+  try {
+    const q = `[out:json][timeout:20];
+(
+  way["name"~"Nossa Senhora das Dores"]["place"~"suburb|neighbourhood|quarter"](around:25000,${DORES_LAT},${DORES_LNG});
+  relation["name"~"Nossa Senhora das Dores"](around:25000,${DORES_LAT},${DORES_LNG});
+  way["name"="Dores"]["place"](around:15000,${DORES_LAT},${DORES_LNG});
+);
+out geom;`;
+    const resp = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'data=' + encodeURIComponent(q),
+      signal: AbortSignal.timeout(18000)
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      for (const el of (data.elements || [])) {
+        let rings = null;
+        if (el.type === 'way' && el.geometry && el.geometry.length > 2) {
+          rings = [el.geometry.map(p => [p.lat, p.lon])];
+        } else if (el.type === 'relation' && el.members) {
+          const outer = el.members.filter(m => m.type==='way' && m.role==='outer' && m.geometry);
+          if (outer.length) rings = outer.map(m => m.geometry.map(p => [p.lat, p.lon]));
+        }
+        if (rings && rings[0] && rings[0].length > 2) {
+          _doresLayer = L.polygon(rings, {
+            color: '#cc0000', fillColor: '#cc0000', fillOpacity: 0.08, weight: 2.5, dashArray: '7,5'
+          }).addTo(_captarMap);
+          _doresLayer.bindTooltip('Nossa Senhora das Dores', {
+            permanent: true, direction: 'center', className: 'leaflet-bairro-label'
+          });
+          _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
+          return;
+        }
+      }
+    }
+  } catch(e) {}
+
+  // ── 2. Nominatim polygon_geojson ──
+  try {
+    for (const q of ['Nossa+Senhora+das+Dores,+Santa+Maria,+RS','Bairro+Dores,+Santa+Maria,+RS']) {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=3&polygon_geojson=1&countrycodes=br`,
+        { signal: AbortSignal.timeout(10000) }
+      );
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      const hit = data.find(d => d.geojson && ['Polygon','MultiPolygon'].includes(d.geojson.type));
+      if (hit) {
+        _doresLayer = L.geoJSON(hit.geojson, {
+          style: { color: '#cc0000', fillColor: '#cc0000', fillOpacity: 0.08, weight: 2.5, dashArray: '7,5' }
+        }).addTo(_captarMap);
+        _doresLayer.bindTooltip('Nossa Senhora das Dores', {
+          permanent: true, direction: 'center', className: 'leaflet-bairro-label'
+        });
+        _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
+        return;
+      }
+    }
+  } catch(e) {}
+
+  // ── 3. Fallback: polígono hardcoded ──
+  _desenharPoligonoFallback();
+}
+
+async function openCaptar() {
+  // Salva dados legados para eventual migração
+  const legacy = localStorage.getItem('captarProspects');
+  if (legacy && legacy !== '[]' && !localStorage.getItem('captarMigrated')) {
+    localStorage.setItem('captarProspectsLegacy', legacy);
+  }
+
+  document.getElementById('homeScreen').style.display = 'none';
+  const el = document.getElementById('captarScreen');
+  el.style.display = 'flex';
+
+  // Carrega prospectos do Supabase (atualiza cache)
+  await loadCaptarProspects();
+
+  setTimeout(() => {
+    const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
+    const bairroPrincipalId = corretor.bairroPrincipal || 'dores';
+    const bairroInfo = BAIRROS_SM.find(b => b.id === bairroPrincipalId) || BAIRROS_SM[0];
+    const centerLat = bairroInfo.lat;
+    const centerLng = bairroInfo.lng;
+
+    if (!_captarMap) {
+      _captarMap = L.map('captarMap', { zoomControl: true }).setView([centerLat, centerLng], DORES_ZOOM);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+        maxZoom: 19
+      }).addTo(_captarMap);
+      _carregarPoligonoDores();
+    } else {
+      _captarMap.setView([centerLat, centerLng], DORES_ZOOM);
+      _captarMap.invalidateSize();
+    }
+    _renderBairrosNoMapa();
+    renderCaptarProspects();
+  }, 100);
+}
+
+function closeCaptar() {
+  document.getElementById('captarScreen').style.display = 'none';
+  document.getElementById('homeScreen').style.display = 'block';
+}
+
+// Desenha círculos vermelhos para cada bairro de atuação selecionado
+function _renderBairrosNoMapa() {
+  if (!_captarMap) return;
+  // Remove camadas antigas
+  Object.values(_bairrosLayers).forEach(l => { try { l.remove(); } catch(e){} });
+  _bairrosLayers = {};
+
+  const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
+  const bairroPrincipalId = corretor.bairroPrincipal || 'dores';
+  const outrosBairros = corretor.bairros || [];
+
+  // Todos os selecionados (principal + outros)
+  const todos = [...new Set([bairroPrincipalId, ...outrosBairros])];
+
+  todos.forEach(id => {
+    if (id === 'dores' && _doresLayer) return; // Dores já tem polígono próprio
+    const b = BAIRROS_SM.find(x => x.id === id);
+    if (!b) return;
+    const isPrincipal = id === bairroPrincipalId;
+    const layer = L.circle([b.lat, b.lng], {
+      color: '#cc0000',
+      fillColor: '#cc0000',
+      fillOpacity: isPrincipal ? 0.10 : 0.06,
+      weight: isPrincipal ? 2.5 : 1.5,
+      dashArray: '7,5',
+      radius: 700
+    }).addTo(_captarMap);
+    layer.bindTooltip(b.nome, {
+      permanent: true, direction: 'center', className: 'leaflet-bairro-label'
+    });
+    _bairrosLayers[id] = layer;
+  });
+}
+
+function abrirFormProspect() {
+  // Limpa campos
+  ['pEndereco','pProprietario','pValor','pLink','pObs','pLat','pLng','pEditId'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('pTipo').value = '';
+  document.getElementById('geoStatus').textContent = '';
+  document.getElementById('prospectModalTitle').textContent = 'Cadastrar Imóvel';
+  document.getElementById('btnSalvarProspect').textContent = '💾 Salvar Imóvel';
+  document.getElementById('prospectModal').style.display = 'flex';
+}
+
+function fecharFormProspect() {
+  document.getElementById('prospectModal').style.display = 'none';
+}
+
+// Geocodifica o ENDEREÇO DIGITADO (não usa GPS do dispositivo)
+async function geocodificarProspect() {
+  const end = document.getElementById('pEndereco').value.trim();
+  if (!end) { showToast('⚠️ Digite o endereço primeiro.'); return; }
+  const status = document.getElementById('geoStatus');
+  status.style.color = '#6b7280';
+  status.textContent = '⏳ Buscando endereço no mapa...';
+  // Tenta com endereço completo + cidade, depois só cidade como fallback
+  const tentativas = [
+    end + ', Santa Maria, RS, Brasil',
+    end + ', Santa Maria, Brasil',
+    end,
+  ];
+  for (const q of tentativas) {
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=br`,
+        { signal: AbortSignal.timeout(10000) }
+      );
+      const data = await resp.json();
+      if (data.length) {
+        document.getElementById('pLat').value = data[0].lat;
+        document.getElementById('pLng').value = data[0].lon;
+        status.textContent = '✅ Localização encontrada! Pin colocado no mapa.';
+        status.style.color = '#16a34a';
+        return;
+      }
+    } catch(e) {}
+  }
+  status.textContent = '⚠️ Endereço não encontrado. Verifique o que foi digitado.';
+  status.style.color = '#dc2626';
+}
+
+// ─── PROSPECTS — Supabase (fonte de verdade) + localStorage (cache offline) ──
+
+let _prospectsCache = []; // cache em memória para render instantâneo
+
+// Carrega prospectos do Supabase e atualiza cache local
+async function loadCaptarProspects() {
+  if (!currentUser) return;
+  try {
+    const { data, error } = await supa
+      .from('captar_prospects')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    _prospectsCache = data || [];
+    // Atualiza cache local para uso offline
+    localStorage.setItem('captarProspects', JSON.stringify(_prospectsCache));
+    // Migração: se havia dados só no localStorage, sobe para Supabase
+    _migrarLocalStorageParaSupabase();
+  } catch(e) {
+    // Offline: usa cache local
+    _prospectsCache = JSON.parse(localStorage.getItem('captarProspects') || '[]');
+  }
+}
+
+// Migra dados que estavam apenas no localStorage para o Supabase (roda só uma vez)
+async function _migrarLocalStorageParaSupabase() {
+  const migrado = localStorage.getItem('captarMigrated');
+  if (migrado) return;
+  const local = JSON.parse(localStorage.getItem('captarProspectsLegacy') || '[]');
+  if (!local.length) {
+    localStorage.setItem('captarMigrated', '1');
+    return;
+  }
+  for (const p of local) {
+    const existe = _prospectsCache.find(x => x.id === p.id);
+    if (existe) continue;
+    await supa.from('captar_prospects').upsert({ ...p, user_id: currentUser.id });
+  }
+  localStorage.setItem('captarMigrated', '1');
+  await loadCaptarProspects();
+}
+
+async function salvarProspect() {
+  if (!currentUser) { showToast('⚠️ Faça login para salvar.'); return; }
+  const end = document.getElementById('pEndereco').value.trim();
+  if (!end) { showToast('⚠️ Endereço é obrigatório.'); return; }
+  if (!document.getElementById('pLat').value) await geocodificarProspect();
+
+  const editId = document.getElementById('pEditId').value;
+
+  if (editId) {
+    const existente = _prospectsCache.find(p => p.id === editId);
+    const atualizado = {
+      ...existente,
+      endereco:     end,
+      proprietario: document.getElementById('pProprietario').value.trim(),
+      valor:        document.getElementById('pValor').value.trim(),
+      tipo:         document.getElementById('pTipo').value,
+      link:         document.getElementById('pLink').value.trim(),
+      obs:          document.getElementById('pObs').value.trim(),
+      lat:          parseFloat(document.getElementById('pLat').value) || existente?.lat || null,
+      lng:          parseFloat(document.getElementById('pLng').value) || existente?.lng || null,
+      updated_at:   new Date().toISOString(),
+    };
+    const { error } = await supa.from('captar_prospects').update(atualizado).eq('id', editId);
+    if (error) { showToast('⚠️ Erro ao atualizar: ' + error.message); return; }
+    const idx = _prospectsCache.findIndex(p => p.id === editId);
+    if (idx >= 0) _prospectsCache[idx] = atualizado;
+    localStorage.setItem('captarProspects', JSON.stringify(_prospectsCache));
+    fecharFormProspect();
+    showToast('✅ Imóvel atualizado!');
+    renderCaptarProspects();
+    return;
+  }
+
+  const prospect = {
+    id:           'p_' + Date.now(),
+    user_id:      currentUser.id,
+    endereco:     end,
+    proprietario: document.getElementById('pProprietario').value.trim(),
+    valor:        document.getElementById('pValor').value.trim(),
+    tipo:         document.getElementById('pTipo').value,
+    link:         document.getElementById('pLink').value.trim(),
+    obs:          document.getElementById('pObs').value.trim(),
+    lat:          parseFloat(document.getElementById('pLat').value) || null,
+    lng:          parseFloat(document.getElementById('pLng').value) || null,
+    status:       'prospecto',
+    created_at:   new Date().toISOString(),
+  };
+  const { error } = await supa.from('captar_prospects').insert(prospect);
+  if (error) { showToast('⚠️ Erro ao salvar: ' + error.message); return; }
+  _prospectsCache.unshift(prospect);
+  localStorage.setItem('captarProspects', JSON.stringify(_prospectsCache));
+  fecharFormProspect();
+  showToast('✅ Imóvel cadastrado!');
+  renderCaptarProspects();
+}
+
+// ─── EXTRAÇÃO AUTOMÁTICA DE DADOS DO ANÚNCIO ─────────────────────
+
+async function extrairEAdicionarProspect() {
+  const input  = document.getElementById('linkParaExtrair');
+  const status = document.getElementById('extrairStatus');
+  const url    = input?.value?.trim();
+
+  if (!url || !url.startsWith('http')) {
+    status.textContent = '⚠️ Cole um link válido (https://...) antes de extrair.';
+    status.style.color = '#dc2626';
+    return;
+  }
+
+  // Limpa todos os campos do formulário antes de preencher
+  ['pEndereco','pProprietario','pValor','pObs','pLat','pLng'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('pTipo').value = '';
+  document.getElementById('geoStatus').textContent = '';
+  // Link já colocado antes mesmo de extrair
+  document.getElementById('pLink').value = url;
+
+  status.textContent = '⏳ Buscando dados do anúncio...';
+  status.style.color = '#166534';
+
+  // Abre o modal imediatamente — pelo menos o link já está preenchido
+  document.getElementById('prospectModal').style.display = 'flex';
+
+  const dados = await _extrairDadosHtml(url);
+
+  if (!dados) {
+    document.getElementById('geoStatus').textContent = '⚠️ Não consegui ler o anúncio automaticamente. Preencha os campos manualmente.';
+    document.getElementById('geoStatus').style.color = '#dc2626';
+    status.textContent = '⚠️ Preencha os dados manualmente no formulário.';
+    status.style.color = '#dc2626';
+    return;
+  }
+
+  // Preenche campos com dados extraídos
+  if (dados.endereco) document.getElementById('pEndereco').value = dados.endereco;
+  if (dados.valor)    document.getElementById('pValor').value    = dados.valor;
+  if (dados.obs)      document.getElementById('pObs').value      = dados.obs;
+
+  // Tipo de imóvel
+  if (dados.tipo) {
+    const sel = document.getElementById('pTipo');
+    if (sel) {
+      const opt = [...sel.options].find(o => o.text.toLowerCase().includes(dados.tipo.toLowerCase()));
+      if (opt) sel.value = opt.value;
+    }
+  }
+
+  // Geocodifica o endereço em paralelo — atualiza o campo de lat/lng no fundo
+  if (dados.endereco) {
+    document.getElementById('geoStatus').textContent = '⏳ Localizando no mapa...';
+    document.getElementById('geoStatus').style.color = '#6b7280';
+    try {
+      const q = encodeURIComponent(dados.endereco + ', Santa Maria, RS, Brasil');
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      const geo = await r.json();
+      if (geo.length) {
+        document.getElementById('pLat').value = geo[0].lat;
+        document.getElementById('pLng').value = geo[0].lon;
+        document.getElementById('geoStatus').textContent = '✅ Pin colocado no mapa!';
+        document.getElementById('geoStatus').style.color = '#16a34a';
+      } else {
+        document.getElementById('geoStatus').textContent = 'Endereço não geocodificado — toque em 📍 GPS para localizar.';
+        document.getElementById('geoStatus').style.color = '#6b7280';
+      }
+    } catch(e) {
+      document.getElementById('geoStatus').textContent = '';
+    }
+  }
+
+  input.value = '';
+  status.textContent = dados.endereco
+    ? '✅ Dados preenchidos! Revise e toque em 💾 Salvar Imóvel.'
+    : '⚠️ Link salvo. Preencha endereço e demais dados manualmente.';
+  status.style.color = '#166534';
+}
+
+// ── Parse do slug da URL — funciona sem rede, instantâneo ──
+function _parsearSlugUrl(url) {
+  const r = { endereco: '', valor: '', tipo: '', obs: '', link: url };
+  try {
+    const u    = new URL(url);
+    const host = u.hostname.toLowerCase();
+    const path = decodeURIComponent(u.pathname).toLowerCase();
+
+    // ── Tipo ──
+    if (/apartamento|apto/.test(path))          r.tipo = 'Apartamento';
+    else if (/\bcasa\b/.test(path))              r.tipo = 'Casa';
+    else if (/terreno|lote\b/.test(path))        r.tipo = 'Terreno';
+    else if (/comercial|sala\b|loja\b/.test(path)) r.tipo = 'Comercial';
+    else if (/cobertura/.test(path))             r.tipo = 'Cobertura';
+    else if (/s?ítio|chácara/.test(path))        r.tipo = 'Sítio/Chácara';
+
+    // ── Dormitórios / quartos ──
+    const dm = path.match(/(\d+)[\s-]*(?:quarto|dorm|bedroom)/);
+    const dorms = dm ? dm[1] : '';
+
+    // ── Suítes ──
+    const sm = path.match(/(\d+)[\s-]*su[íi]te/);
+    const suites = sm ? sm[1] : '';
+
+    // ── Banheiros ──
+    const bm = path.match(/(\d+)[\s-]*(?:banheir|wc|bath)/);
+    const baths = bm ? bm[1] : '';
+
+    // ── Vagas ──
+    const vm = path.match(/(\d+)[\s-]*vaga/);
+    const vagas = vm ? vm[1] : '';
+
+    // ── Área ──
+    const am = path.match(/(\d+)[\s-]*m[²2]/);
+    const area = am ? am[1] : '';
+
+    // ── Bairro / endereço ──
+    const bairros = [
+      ['nossa-senhora-das-dores','n-sra-das-dores','n.sra.dores','bairro-dores'],
+      'Nossa Senhora das Dores, Santa Maria/RS'
+    ];
+    if (bairros[0].some(b => path.includes(b))) {
+      r.endereco = 'Nossa Senhora das Dores, Santa Maria/RS';
+    } else {
+      // Tenta extrair cidade/bairro genérico do path
+      const match = path.match(/(?:em[-_]|bairro[-_])([a-z-]{4,30})/);
+      if (match) r.endereco = match[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) + ', Santa Maria/RS';
+    }
+
+    // ── Observações ──
+    const obs = [];
+    if (r.tipo)  obs.push(r.tipo);
+    if (dorms)   obs.push(dorms + ' dorm.');
+    if (suites)  obs.push(suites + ' suíte(s)');
+    if (baths)   obs.push(baths + ' banh.');
+    if (vagas)   obs.push(vagas + ' vaga(s)');
+    if (area)    obs.push(area + ' m²');
+    r.obs = obs.join(' · ');
+
+    // ── Extrair ID do ZAP para chamar a API ──
+    if (host.includes('zapimoveis') || host.includes('vivareal')) {
+      const idM = path.match(/[,_-](\d{10,})/) || path.match(/id[-_](\d{5,})/);
+      r._listingId = idM ? idM[1] : null;
+      r._portal = host.includes('zapimoveis') ? 'ZAP' : 'VIVAREAL';
+    }
+  } catch(e) {}
+  return r;
+}
+
+// ── Busca dados completos na API do ZAP/VivaReal ──
+async function _buscarApiZap(listingId, portal) {
+  // API pública do grupo OLX (ZAP + VivaReal)
+  const portalParam = portal === 'ZAP' ? 'ZAP' : 'VIVAREAL';
+  const endpoints = [
+    `https://glue-api.zapimoveis.com.br/v2/listings/${listingId}?portal=${portalParam}`,
+    `https://glue-api.zapimoveis.com.br/v1/listings/${listingId}`,
+  ];
+  for (const ep of endpoints) {
+    try {
+      const resp = await fetch(ep, {
+        signal: AbortSignal.timeout(10000),
+        headers: { 'Accept': 'application/json', 'x-domain': 'www.zapimoveis.com.br' }
+      });
+      if (!resp.ok) continue;
+      const json = await resp.json();
+      const lst  = json.listing || json.ad || json;
+      if (!lst) continue;
+
+      const r = { endereco:'', valor:'', tipo:'', obs:'' };
+
+      // Endereço
+      const adr = lst.address || lst.location || {};
+      const rua    = adr.street || adr.streetName || '';
+      const num    = adr.streetNumber ? ', ' + adr.streetNumber : '';
+      const bairro = adr.neighborhood || adr.district || '';
+      const cidade = adr.city || 'Santa Maria';
+      const uf     = adr.stateAcronym || 'RS';
+      r.endereco = [rua + num, bairro, cidade + '/' + uf].filter(Boolean).join(' — ');
+
+      // Preço
+      const pi    = lst.pricingInfos?.[0] || {};
+      const preco = pi.price || lst.price || '';
+      if (preco) {
+        const n = Number(String(preco).replace(/\D/g,''));
+        r.valor = n ? 'R$ ' + n.toLocaleString('pt-BR') : String(preco);
+      }
+
+      // Tipo
+      const tp = (lst.unitTypes?.[0] || lst.propertyType || '').toLowerCase();
+      if (/apart/.test(tp))   r.tipo = 'Apartamento';
+      else if (/casa/.test(tp))    r.tipo = 'Casa';
+      else if (/terreno/.test(tp)) r.tipo = 'Terreno';
+      else if (tp) r.tipo = tp;
+
+      // Detalhes
+      const dorms  = lst.bedrooms?.[0]      ?? lst.rooms    ?? '';
+      const suites = lst.suites?.[0]        ?? '';
+      const baths  = lst.bathrooms?.[0]     ?? '';
+      const vagas  = lst.parkingSpaces?.[0] ?? '';
+      const area   = lst.usableAreas?.[0]   ?? lst.totalArea ?? '';
+      const obs = [];
+      if (r.tipo)  obs.push(r.tipo);
+      if (dorms)   obs.push(dorms + ' dorm.');
+      if (suites)  obs.push(suites + ' suíte(s)');
+      if (baths)   obs.push(baths + ' banh.');
+      if (vagas)   obs.push(vagas + ' vaga(s)');
+      if (area)    obs.push(area + ' m²');
+      r.obs = obs.join(' · ');
+      return r;
+    } catch(e) {}
+  }
+  return null;
+}
+
+// ── Tenta via proxy para portais mais simples (OLX, Chaves na Mão) ──
+async function _buscarViaProxy(url) {
+  const proxies = [
+    'https://api.allorigins.win/get?url=' + encodeURIComponent(url),
+    'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(url),
+    'https://corsproxy.io/?' + encodeURIComponent(url),
+  ];
+  let html = '';
+  for (const px of proxies) {
+    try {
+      const resp = await fetch(px, { signal: AbortSignal.timeout(15000) });
+      if (!resp.ok) continue;
+      const ct = resp.headers.get('content-type') || '';
+      html = ct.includes('json') ? ((await resp.json()).contents || '') : await resp.text();
+      if (html.length > 1000) break;
+    } catch(e) {}
+  }
+  if (!html) return null;
+  const r = { endereco:'', valor:'', tipo:'', obs:'' };
+  // og:title
+  const tt = (html.match(/property=["']og:title["'][^>]*content=["']([^"']{5,200})["']/i) || [])[1]
+          || (html.match(/<title[^>]*>([^<]{5,200})<\/title>/i) || [])[1] || '';
+  // og:description
+  const dd = (html.match(/property=["']og:description["'][^>]*content=["']([^"']{5,400})["']/i) || [])[1]
+          || (html.match(/name=["']description["'][^>]*content=["']([^"']{5,400})["']/i) || [])[1] || '';
+  // Preço
+  const pm = (tt + ' ' + dd).match(/R\$\s*[\d.,]+/i);
+  if (pm) r.valor = pm[0].replace(/\s+/g,' ').trim();
+  // Tipo
+  if (/apartamento/i.test(tt)) r.tipo = 'Apartamento';
+  else if (/\bcasa\b/i.test(tt)) r.tipo = 'Casa';
+  else if (/terreno|lote/i.test(tt)) r.tipo = 'Terreno';
+  // Endereço do título
+  const em = tt.match(/\bem\s+([^,\-|]{3,40}),\s*([^,\-|]{3,30})/i);
+  if (em) r.endereco = em[1].trim() + ', ' + em[2].trim();
+  // Obs da desc
+  r.obs = dd ? dd.substring(0,280) : '';
+  // Características da desc
+  const obsExtra = [];
+  const dm = dd.match(/(\d+)\s*(?:quarto|dorm)/i); if (dm) obsExtra.push(dm[1]+' dorm.');
+  const sm = dd.match(/(\d+)\s*su[íi]te/i);        if (sm) obsExtra.push(sm[1]+' suíte(s)');
+  const bm = dd.match(/(\d+)\s*banh/i);             if (bm) obsExtra.push(bm[1]+' banh.');
+  const vm = dd.match(/(\d+)\s*vaga/i);             if (vm) obsExtra.push(vm[1]+' vaga(s)');
+  const am = dd.match(/(\d+)\s*m[²2]/i);            if (am) obsExtra.push(am[1]+' m²');
+  if (obsExtra.length) r.obs = (r.tipo ? r.tipo + ' · ' : '') + obsExtra.join(' · ') + (dd ? '\n' + dd.substring(0,200) : '');
+  return r;
+}
+
+async function _extrairDadosHtml(url) {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.toLowerCase();
+
+    // 1. Parse instantâneo do URL (sempre funciona)
+    const base = _parsearSlugUrl(url);
+
+    // 2. ZAP ou VivaReal: tenta API interna com ID do anúncio
+    if ((host.includes('zapimoveis') || host.includes('vivareal')) && base._listingId) {
+      const api = await _buscarApiZap(base._listingId, base._portal);
+      if (api && (api.endereco || api.valor || api.obs)) {
+        // Mescla: API tem prioridade, URL completa o que faltou
+        return {
+          endereco: api.endereco || base.endereco,
+          valor:    api.valor    || base.valor,
+          tipo:     api.tipo     || base.tipo,
+          obs:      api.obs      || base.obs,
+        };
+      }
+    }
+
+    // 3. OLX / Chaves na Mão: HTML simples, proxy funciona melhor
+    if (host.includes('olx') || host.includes('chavesnamao') || host.includes('attria')) {
+      const proxy = await _buscarViaProxy(url);
+      if (proxy && (proxy.endereco || proxy.valor)) {
+        return {
+          endereco: proxy.endereco || base.endereco,
+          valor:    proxy.valor    || base.valor,
+          tipo:     proxy.tipo     || base.tipo,
+          obs:      proxy.obs      || base.obs,
+        };
+      }
+    }
+
+    // 4. Fallback: retorna o que o slug da URL deu
+    return base;
+  } catch(e) {
+    return _parsearSlugUrl(url);
+  }
+}
+
+function focarNoMapa(id, lat, lng) {
+  if (!_captarMap) return;
+  _captarMap.setView([lat, lng], 17);
+  if (_captarMarkers[id]) _captarMarkers[id].openPopup();
+  // Rola a tela para o mapa
+  document.getElementById('captarMap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function iniciarVisitaFromProspect(id) {
+  const lista = _prospectsCache;
+  const p = lista.find(x => x.id === id);
+  if (!p) return;
+
+  // Fecha tela Captar, vai para o formulário
+  closeCaptar();
+  startNovaVisita();
+
+  // Preenche os campos do formulário com dados do prospect
+  setTimeout(() => {
+    if (p.endereco)    { const f = document.getElementById('imovel');      if (f) f.value = p.endereco; }
+    if (p.proprietario){ const f = document.getElementById('proprietario'); if (f) f.value = p.proprietario; }
+    if (p.link)        { const f = document.getElementById('linkAnuncio'); if (f) f.value = p.link; }
+    if (p.valor)       { const f = document.getElementById('valorPedido'); if (f) f.value = p.valor; }
+    if (p.tipo) {
+      // Marca o chip de tipo correto
+      document.querySelectorAll('input[name="tipo"]').forEach(r => {
+        if (r.value.toLowerCase() === p.tipo.toLowerCase()) r.checked = true;
+      });
+    }
+
+    // Navega até a etapa de Identificação (step 1 ou 2 dependendo do layout)
+    // Garante que o step correto está visível
+    showToast('📋 Dados do imóvel pré-preenchidos! Complete e salve a visita.');
+  }, 300);
+}
+
+function editarProspect(id) {
+  const lista = _prospectsCache;
+  const p = lista.find(x => x.id === id);
+  if (!p) return;
+  // Preenche o modal com dados existentes
+  document.getElementById('pEditId').value       = p.id;
+  document.getElementById('pEndereco').value     = p.endereco || '';
+  document.getElementById('pProprietario').value = p.proprietario || '';
+  document.getElementById('pValor').value        = p.valor || '';
+  document.getElementById('pTipo').value         = p.tipo || '';
+  document.getElementById('pLink').value         = p.link || '';
+  document.getElementById('pObs').value          = p.obs || '';
+  document.getElementById('pLat').value          = p.lat || '';
+  document.getElementById('pLng').value          = p.lng || '';
+  document.getElementById('geoStatus').textContent = p.lat ? '✅ Localização já cadastrada.' : '';
+  document.getElementById('geoStatus').style.color = '#16a34a';
+  document.getElementById('prospectModalTitle').textContent = 'Editar Imóvel';
+  document.getElementById('btnSalvarProspect').textContent  = '💾 Atualizar Imóvel';
+  document.getElementById('prospectModal').style.display = 'flex';
+}
+
+async function deletarProspect(id) {
+  if (!confirm('Remover este imóvel da lista de captação?')) return;
+  if (currentUser) {
+    const { error } = await supa.from('captar_prospects').delete().eq('id', id);
+    if (error) { showToast('⚠️ Erro ao excluir: ' + error.message); return; }
+  }
+  _prospectsCache = _prospectsCache.filter(p => p.id !== id);
+  localStorage.setItem('captarProspects', JSON.stringify(_prospectsCache));
+  if (_captarMarkers[id]) { _captarMarkers[id].remove(); delete _captarMarkers[id]; }
+  renderCaptarProspects();
+}
+
+async function alterarStatusProspect(id, novoStatus) {
+  if (currentUser) {
+    await supa.from('captar_prospects').update({ status: novoStatus, updated_at: new Date().toISOString() }).eq('id', id);
+  }
+  const p = _prospectsCache.find(x => x.id === id);
+  if (p) { p.status = novoStatus; localStorage.setItem('captarProspects', JSON.stringify(_prospectsCache)); }
+  renderCaptarProspects();
+}
+
+function renderCaptarProspects() {
+  const lista = _prospectsCache;
+  const listEl = document.getElementById('captarList');
+
+  // Limpa markers antigos
+  Object.values(_captarMarkers).forEach(m => m.remove());
+  _captarMarkers = {};
+
+  if (!lista.length) {
+    listEl.innerHTML = `<div style="text-align:center;color:#9ca3af;padding:24px;font-size:14px;">
+      Nenhum imóvel cadastrado ainda.<br>Toque em <strong>+ Adicionar</strong> para incluir um imóvel prospectado.
+    </div>`;
+    return;
+  }
+
+  const statusCor  = { prospecto:'#6b7280', visitado:'#0a1628', captado:'#16a34a', descartado:'#dc2626' };
+  const statusIcon = { prospecto:'🔍', visitado:'👁️', captado:'✅', descartado:'❌' };
+
+  // Adiciona markers no mapa
+  if (_captarMap) {
+    lista.forEach(p => {
+      if (!p.lat || !p.lng) return;
+      // Cores do pin por status
+      const pinColors = {
+        captado:    { top1:'#14532d', top2:'#16a34a', mid:'#f0fdf4', bot1:'#14532d', bot2:'#16a34a', border:'#166534' },
+        descartado: { top1:'#4b5563', top2:'#9ca3af', mid:'#f3f4f6', bot1:'#374151', bot2:'#9ca3af', border:'#6b7280' },
+        visitado:   { top1:'#1e3a5f', top2:'#2563eb', mid:'#eff6ff', bot1:'#1e3a5f', bot2:'#2563eb', border:'#1d4ed8' },
+        prospecto:  { top1:'#7f1d1d', top2:'#cc0000', mid:'#fff7f7', bot1:'#1e3a5f', bot2:'#2563eb', border:'#cc0000' },
+      };
+      const c = pinColors[p.status] || pinColors.prospecto;
+      const icon = L.divIcon({
+        className: '',
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+          <defs>
+            <clipPath id="pin-clip-${p.id}">
+              <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z"/>
+            </clipPath>
+          </defs>
+          <!-- Sombra -->
+          <ellipse cx="18" cy="42" rx="6" ry="2" fill="rgba(0,0,0,0.25)"/>
+          <!-- Shape do pin com borda -->
+          <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z"
+            fill="white" stroke="${c.border}" stroke-width="1.5"/>
+          <!-- Quadrante sup-esq -->
+          <rect x="1" y="2" width="17" height="20" fill="${c.top1}" clip-path="url(#pin-clip-${p.id})"/>
+          <!-- Quadrante sup-dir -->
+          <rect x="18" y="2" width="17" height="20" fill="${c.top2}" clip-path="url(#pin-clip-${p.id})"/>
+          <!-- Faixa branca do meio -->
+          <rect x="1" y="17" width="34" height="7" fill="${c.mid}" clip-path="url(#pin-clip-${p.id})"/>
+          <!-- Quadrante inf-esq -->
+          <rect x="1" y="24" width="17" height="20" fill="${c.bot1}" clip-path="url(#pin-clip-${p.id})"/>
+          <!-- Quadrante inf-dir -->
+          <rect x="18" y="24" width="17" height="20" fill="${c.bot2}" clip-path="url(#pin-clip-${p.id})"/>
+          <!-- Linha vertical central -->
+          <line x1="18" y1="2" x2="18" y2="42" stroke="white" stroke-width="1" opacity="0.6" clip-path="url(#pin-clip-${p.id})"/>
+          <!-- Borda final por cima -->
+          <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z"
+            fill="none" stroke="white" stroke-width="2.5"/>
+        </svg>`,
+        iconSize: [36, 44], iconAnchor: [18, 42], popupAnchor: [0, -44]
+      });
+      const popup = `<div style="font-size:13px;line-height:1.5;min-width:180px;">
+        <strong>${p.endereco}</strong><br>
+        ${p.proprietario ? '👤 ' + p.proprietario + '<br>' : ''}
+        ${p.valor ? '💰 ' + p.valor + '<br>' : ''}
+        ${p.link ? `<a href="${p.link}" onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');return false;" style="color:#cc0000;font-weight:700;cursor:pointer;">🔗 Ver anúncio</a>` : ''}
+      </div>`;
+      const marker = L.marker([p.lat, p.lng], { icon }).addTo(_captarMap).bindPopup(popup);
+      _captarMarkers[p.id] = marker;
+    });
+  }
+
+  // Lista de cards
+  listEl.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">
+      ${lista.length} imóvel(eis) cadastrado(s)
+    </div>
+    ${lista.map(p => {
+      const sc = statusCor[p.status] || '#6b7280';
+      const si = statusIcon[p.status] || '🔍';
+      return `
+      <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:700;color:#0a1628;">${p.endereco}</div>
+            ${p.proprietario ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">👤 ${p.proprietario}</div>` : ''}
+            ${p.valor ? `<div style="font-size:13px;font-weight:700;color:#cc0000;margin-top:2px;">${p.valor}</div>` : ''}
+            ${p.tipo ? `<div style="font-size:11px;color:#6b7280;">${p.tipo}</div>` : ''}
+          </div>
+          <span style="background:${sc}20;color:${sc};border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;">${si} ${p.status}</span>
+        </div>
+        ${p.obs ? `<div style="font-size:12px;color:#374151;background:#f9fafb;border-radius:6px;padding:6px 8px;margin-bottom:8px;">${p.obs}</div>` : ''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+          <button onclick="iniciarVisitaFromProspect('${p.id}')" style="background:#cc0000;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🏠 Iniciar Visita</button>
+          ${p.link ? `<button onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🔗 Anúncio</button>` : ''}
+          ${p.lat && p.lng ? `<button onclick="focarNoMapa('${p.id}',${p.lat},${p.lng})" style="background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;">📍 Mapa</button>` : ''}
+          <select onchange="alterarStatusProspect('${p.id}',this.value)" style="border:1px solid #e5e7eb;border-radius:8px;padding:5px 8px;font-size:12px;background:#fff;cursor:pointer;color:#374151;">
+            <option value="prospecto" ${p.status==='prospecto'?'selected':''}>🔍 Prospecto</option>
+            <option value="visitado"  ${p.status==='visitado'?'selected':''}>👁️ Visitado</option>
+            <option value="captado"   ${p.status==='captado'?'selected':''}>✅ Captado</option>
+            <option value="descartado"${p.status==='descartado'?'selected':''}>❌ Descartado</option>
+          </select>
+          <button onclick="editarProspect('${p.id}')" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">✏️ Editar</button>
+          <button onclick="deletarProspect('${p.id}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;margin-left:auto;">🗑️</button>
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+// ═══ FOTO DO CORRETOR ═══
+function handleBrokerPhoto(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const src = ev.target.result;
+    document.getElementById('brokerPhotoImg').src = src;
+    document.getElementById('brokerPhotoImg').style.display = 'block';
+    document.getElementById('brokerPhotoIcon').style.display = 'none';
+    localStorage.setItem('corretorFoto', src);
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+// ═══ STATE ═══
+const STEPS = 5;
+let currentStep = 1;
+const photos = { matricula: [], interiores: [], fachada: [], destaques: [] };
+let pendingPhoto = null;
+let photoMode = 'anuncio'; // 'anuncio' | 'local'
+
+const sectionNames = ['Identificação','Características','Perguntas','Fotos','Resumo'];
+
+// ═══ INIT ═══
+document.addEventListener('DOMContentLoaded', async () => {
+  updateOfflineBadge();
+
+  // ── Limpar automaticamente pendingVisits com formato antigo ──
+  // Visitas antigas tinham adicionais/dorms/etc. como colunas top-level → causam erro de schema
+  try {
+    const COLUNAS_OK = new Set([
+      'user_id','broker_name','broker_creci','broker_phone',
+      'endereco','proprietario_nome','proprietario_telefone',
+      'tipo_imovel','valor_pedido','data_visita',
+      'questionario','status','total_fotos','observacoes'
+    ]);
+    const pendentes = JSON.parse(localStorage.getItem('pendingVisits') || '[]');
+    const limpas = pendentes.filter(v => Object.keys(v).every(k => COLUNAS_OK.has(k)));
+    if (limpas.length !== pendentes.length) {
+      localStorage.setItem('pendingVisits', JSON.stringify(limpas));
+      console.info(`Limpeza: ${pendentes.length - limpas.length} visita(s) com formato antigo removida(s) da fila.`);
+    }
+  } catch(e) {}
+
+  await initAuth();
+  // Restaurar último e-mail e senha usados
+  const lastEmail = localStorage.getItem('lastLoginEmail') || '';
+  const lastPwd   = localStorage.getItem('lastLoginPwd')   || '';
+  if (lastEmail) { const el = document.getElementById('loginEmail');    if (el) el.value = lastEmail; }
+  if (lastPwd)   { const el = document.getElementById('loginPassword'); if (el) el.value = lastPwd;   }
+  const now = new Date();
+  document.getElementById('data').value = now.toISOString().split('T')[0];
+  document.getElementById('hora').value = now.toTimeString().slice(0,5);
+
+  // Broker data is stored in localStorage and loaded via showHomeScreen() / openBrokerModal()
+  // Broker photo loaded via afterLogin/openBrokerModal
+
+  // Build step dots
+  const dotsEl = document.getElementById('stepDots');
+  for (let i = 1; i <= STEPS; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 1 ? ' active' : '');
+    d.id = 'dot' + i;
+    dotsEl.appendChild(d);
+  }
+
+  // File handlers
+  ['Matricula','Interiores','Fachada','Destaques'].forEach(s => {
+    document.getElementById('file' + s).addEventListener('change', e => handleFiles(e, s.toLowerCase()));
+  });
+
+  // Chip click fix
+  document.querySelectorAll('.chip, .r-chip').forEach(chip => {
+    chip.addEventListener('click', e => {
+      const inp = chip.querySelector('input');
+      if (e.target !== inp) inp.click();
+    });
+  });
+
+  updateUI();
+});
+
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ═══ PHOTO OPTION ═══
+function setPhotoOption(mode) {
+  photoMode = mode;
+  document.getElementById('optAnuncio').classList.toggle('selected', mode === 'anuncio');
+  document.getElementById('optLocal').classList.toggle('selected', mode === 'local');
+
+  const note = document.getElementById('photoOptionNote');
+  if (mode === 'anuncio') {
+    note.className = 'info-box';
+    note.textContent = 'Selecione as fotos já salvas do anúncio na galeria do celular.';
+    // Gallery mode — no capture attribute
+    ['Matricula','Interiores','Fachada','Destaques'].forEach(s => {
+      const f = document.getElementById('file' + s);
+      f.removeAttribute('capture');
+    });
+  } else {
+    note.className = 'warn-box';
+    note.textContent = '📷 A câmera do celular será aberta para fotografar o imóvel agora.';
+    // Camera mode — add capture attribute
+    ['Matricula','Interiores','Fachada','Destaques'].forEach(s => {
+      const f = document.getElementById('file' + s);
+      f.setAttribute('capture', 'environment');
+    });
+  }
+}
+
+// ═══ NAVIGATION ═══
+function nextStep() {
+  if (currentStep === STEPS) { generatePDF(); return; }
+  currentStep++;
+  updateUI();
+}
+
+function prevStep() {
+  if (currentStep > 1) { currentStep--; updateUI(); }
+  else { showHomeScreen(); }
+}
+
+function updateUI() {
+  for (let i = 1; i <= STEPS; i++) {
+    document.getElementById('step' + i).classList.toggle('active', i === currentStep);
+  }
+  for (let i = 1; i <= STEPS; i++) {
+    const d = document.getElementById('dot' + i);
+    d.className = 'dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+  }
+  const pct = Math.round(((currentStep - 1) / STEPS) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('pct').textContent = pct + '%';
+  document.getElementById('sectionName').textContent = sectionNames[currentStep - 1];
+  document.getElementById('stepCountLabel').textContent = 'Etapa ' + currentStep + ' de ' + STEPS;
+  document.getElementById('btnBack').style.visibility = currentStep === 1 ? 'hidden' : 'visible';
+
+  const btn = document.getElementById('btnNext');
+  if (currentStep === STEPS) {
+    btn.innerHTML = '📄 Gerar PDF';
+    btn.className = 'btn btn-pdf';
+  } else {
+    btn.innerHTML = 'Próximo →';
+    btn.className = 'btn btn-next';
+  }
+  if (currentStep === STEPS) buildSummary();
+  window.scrollTo(0, 0);
+}
+
+// ═══ PHOTOS ═══
+function triggerPhoto(section) {
+  document.getElementById('file' + cap(section)).click();
+}
+
+async function handleFiles(e, section) {
+  const files = Array.from(e.target.files);
+  e.target.value = '';
+  if (!files.length) return;
+
+  if (files.length === 1) {
+    // Single file: show caption modal
+    const src = await readFileAsDataURL(files[0]);
+    pendingPhoto = { src, section };
+    openCaptionModal();
+  } else {
+    // Multiple files: save all directly, no modal
+    for (const f of files) {
+      const src = await readFileAsDataURL(f);
+      savePhoto(src, section, '');
+    }
+    showToast(`✅ ${files.length} foto(s) adicionada(s)!`);
+  }
+}
+
+function readFileAsDataURL(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.onload = ev => resolve(ev.target.result);
+    reader.readAsDataURL(file);
+  });
+}
+
+function openCaptionModal() {
+  document.getElementById('captionInput').value = '';
+  document.getElementById('captionModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('captionModal').classList.remove('open');
+  if (pendingPhoto) { savePhoto(pendingPhoto.src, pendingPhoto.section, ''); pendingPhoto = null; }
+}
+
+function confirmCaption() {
+  const c = document.getElementById('captionInput').value;
+  document.getElementById('captionModal').classList.remove('open');
+  if (pendingPhoto) { savePhoto(pendingPhoto.src, pendingPhoto.section, c); pendingPhoto = null; }
+}
+
+function savePhoto(src, section, caption) {
+  const id = Date.now() + Math.random();
+  photos[section].push({ id, src, caption });
+  renderGrid(section);
+}
+
+function removePhoto(section, id) {
+  photos[section] = photos[section].filter(p => p.id !== id);
+  renderGrid(section);
+}
+
+function renderGrid(section) {
+  const grid = document.getElementById('grid' + cap(section));
+  grid.innerHTML = '';
+  photos[section].forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'photo-thumb';
+    div.innerHTML = `<img src="${p.src}" loading="lazy">
+      ${p.caption ? `<div class="photo-caption">${p.caption}</div>` : ''}
+      <button class="del-btn" onclick="removePhoto('${section}',${p.id})">✕</button>`;
+    grid.appendChild(div);
+  });
+  const btn = document.createElement('button');
+  btn.className = 'add-photo-btn';
+  btn.onclick = () => triggerPhoto(section);
+  btn.innerHTML = `<span class="icon">➕</span><span>Adicionar</span>`;
+  grid.appendChild(btn);
+}
+
+// ═══ SUMMARY ═══
+function buildSummary() {
+  // Dados do corretor via localStorage (não há campos de form para isso)
+  const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
+  const tipo  = document.querySelector('input[name="tipo"]:checked')?.value || '—';
+  const cons  = document.querySelector('input[name="conservacao"]:checked')?.value || '—';
+  const dorms = document.querySelector('input[name="dorms"]:checked')?.value || '—';
+  const suit  = document.querySelector('input[name="suites"]:checked')?.value || '—';
+  const banh  = document.querySelector('input[name="banheiros"]:checked')?.value || '—';
+  const adics = Array.from(document.querySelectorAll('input[name="adicionais"]:checked')).map(x => x.value).join(', ') || '—';
+  const totalFotos = Object.values(photos).reduce((s, a) => s + a.length, 0);
+
+  // Miniaturas das fotos
+  const allPhotos = Object.values(photos).flat();
+  const thumbsHTML = allPhotos.length > 0
+    ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+        ${allPhotos.slice(0,12).map(src => `<img src="${src}" style="width:70px;height:52px;object-fit:cover;border-radius:6px;">`).join('')}
+        ${allPhotos.length > 12 ? `<div style="width:70px;height:52px;background:#1e2d44;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;">+${allPhotos.length-12}</div>` : ''}
+       </div>`
+    : '<div class="summary-item">Nenhuma foto adicionada.</div>';
+
+  document.getElementById('summaryBody').innerHTML = `
+    <div class="summary-card">
+      <h4>👤 Corretor</h4>
+      <div class="summary-item"><strong>Nome</strong>${corretor.nome || '—'}</div>
+      <div class="summary-item"><strong>CRECI</strong>${corretor.creci || '—'}</div>
+      <div class="summary-item"><strong>Telefone</strong>${corretor.telefone || '—'}</div>
+    </div>
+    <div class="summary-card">
+      <h4>🏠 Identificação</h4>
+      <div class="summary-item"><strong>Proprietário</strong>${v('proprietario')}</div>
+      <div class="summary-item"><strong>Imóvel</strong>${v('imovel')}</div>
+      <div class="summary-item"><strong>Data / Hora</strong>${v('data')} às ${v('hora')}</div>
+      ${v('linkAnuncio') !== '—' ? `<div class="summary-item"><strong>Link do anúncio</strong>${v('linkAnuncio')}</div>` : ''}
+      <div class="summary-item"><strong>Tipo</strong>${tipo}</div>
+      <div class="summary-item"><strong>Conservação</strong>${cons}</div>
+    </div>
+    <div class="summary-card">
+      <h4>📐 Características</h4>
+      <div class="summary-item"><strong>Dormitórios · Suítes · Banheiros</strong>${dorms} · ${suit} · ${banh}</div>
+      <div class="summary-item"><strong>Vagas / Área</strong>${v('vagas') || '—'} vagas · ${v('area') ? v('area') + ' m²' : '—'}</div>
+      <div class="summary-item"><strong>Adicionais</strong>${adics}</div>
+      <div class="summary-item"><strong>Valor pedido</strong>${v('valorPedido') || '—'}</div>
+    </div>
+    <div class="summary-card">
+      <h4>💬 Perguntas</h4>
+      ${[1,2,3,4,5,6,7].map(i => {
+        const val = document.getElementById('q'+i)?.value;
+        return val ? `<div class="summary-item">${val.substring(0,90)}${val.length > 90 ? '...' : ''}</div>` : '';
+      }).join('')}
+    </div>
+    <div class="summary-card">
+      <h4>📸 Fotos (${totalFotos})</h4>
+      ${thumbsHTML}
+    </div>
+  `;
+}
+
+function v(id) { return document.getElementById(id)?.value || '—'; }
+
+// ═══ SVG → PNG helper (para logos no PDF) ═══
+async function svgToPng(selector, scale = 4) {
+  const el = document.querySelector(selector);
+  if (!el) return null;
+  const vb = el.viewBox.baseVal;
+  if (!vb || !vb.width) return null;
+  const svgStr = new XMLSerializer().serializeToString(el);
+  const dataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width  = vb.width  * scale;
+      c.height = vb.height * scale;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      res(c.toDataURL('image/png'));
+    };
+    img.onerror = () => res(null);
+    img.src = dataUrl;
+  });
+}
+
+// ═══ PDF ═══
+async function generatePDF() {
+  document.getElementById('spinner').classList.add('show');
+  await document.fonts.ready;
+  await new Promise(r => setTimeout(r, 120));
+
+  // Renderizar balão (único logo que continua como SVG)
+  const balloonPng = await svgToPng('.logo-balloon');
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210, M = 14, colW = W - 2 * M;
+    let y = 0;
+
+    const sf = (size, style = 'normal', color = [26,26,26]) => {
+      doc.setFontSize(size); doc.setFont('helvetica', style); doc.setTextColor(...color);
+    };
+    const addPage = (need = 20) => { if (y + need > 280) { doc.addPage(); y = 20; } };
+    const rect = (x, iy, w, h, fill, stroke) => {
+      if (fill) { doc.setFillColor(...fill); doc.rect(x, iy, w, h, 'F'); }
+      if (stroke) { doc.setDrawColor(...stroke); doc.rect(x, iy, w, h, 'S'); }
+    };
+
+    // ── HEADER ──
+    const hdrH = 46;
+    rect(0, 0, W, hdrH, [10, 22, 40]); // fundo navy
+
+    // Balão PNG
+    const bH = 22, bW = bH * (90/110);
+    if (balloonPng) doc.addImage(balloonPng, 'PNG', M, 2, bW, bH);
+
+    // REMAX Noble — texto (após o balão)
+    const rx = M + bW + 4;
+    sf(6,  'bold',   [255,255,255]); doc.text('IMOVEIS', rx, 8, {charSpace: 0.5});
+    sf(20, 'bold',   [255,255,255]); doc.text('REMAX',   rx, 20);
+    sf(8,  'italic', [230,230,230]); doc.text('Noble',   rx, 28, {charSpace: 0.4});
+
+    // ── ADRIANO AGUIRRE — logo fiel: texto + dupla régua, alinhado à direita ──
+    const logoX = W - M - 52; // margem direita do bloco
+    sf(9, 'normal', [255,255,255]);
+    doc.setFont('helvetica', 'normal');
+    // Simular espaçamento de letra com charSpace
+    doc.text('ADRIANO', logoX + 52, 13, { align: 'right', charSpace: 0.55 });
+    doc.setDrawColor(200, 215, 230);
+    doc.setLineWidth(0.45);
+    doc.line(logoX, 16.2, logoX + 52, 16.2);
+    doc.line(logoX, 18.0, logoX + 52, 18.0);
+    doc.text('AGUIRRE', logoX + 52, 27, { align: 'right', charSpace: 0.55 });
+
+    // ── Linha separadora header ──
+    doc.setDrawColor(20, 40, 65);
+    doc.setLineWidth(0.3);
+    doc.line(M, hdrH - 1, W - M, hdrH - 1);
+    y = hdrH + 4;
+
+    // ══ BLOCO CORRETOR — seção profissional logo abaixo do header ══
+    const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
+    const cn = corretor.nome    || '';
+    const cc = corretor.creci   || '';
+    const ct = corretor.telefone || '';
+    const fotoCorretor = localStorage.getItem('corretorFoto');
+
+    const blocoH = 30; // altura do bloco
+    rect(0, y, W, blocoH, [245, 247, 250]); // fundo cinza claro
+    doc.setDrawColor(220, 225, 232);
+    doc.setLineWidth(0.3);
+    doc.rect(0, y, W, blocoH, 'S');
+
+    // Foto do corretor (quadrada, com borda arredondada simulada)
+    const fotoSize = 22;
+    const fotoY = y + (blocoH - fotoSize) / 2;
+    if (fotoCorretor) {
+      try {
+        doc.addImage(fotoCorretor, 'JPEG', M, fotoY, fotoSize, fotoSize);
+        // Borda sutil ao redor da foto
+        doc.setDrawColor(180, 190, 205);
+        doc.setLineWidth(0.4);
+        doc.rect(M, fotoY, fotoSize, fotoSize, 'S');
+      } catch(e) {}
+    }
+
+    // Linha azul vertical decorativa
+    const txtX = M + (fotoCorretor ? fotoSize + 5 : 0);
+    doc.setFillColor(204, 0, 0); // vermelho REMAX
+    doc.rect(txtX, y + 5, 1.2, blocoH - 10, 'F');
+
+    // Dados do corretor
+    const dadosX = txtX + 5;
+    if (cn) {
+      sf(13, 'bold', [10, 22, 40]);
+      doc.text(cn, dadosX, y + 11);
+    }
+    sf(8, 'normal', [80, 95, 115]);
+    const infoLine = [cc ? 'CRECI ' + cc : '', ct || ''].filter(Boolean).join('    ·    ');
+    if (infoLine) doc.text(infoLine, dadosX, y + 18);
+    sf(7, 'normal', [130, 145, 165]);
+    doc.text('REMAX Noble — Corretor de Imóveis', dadosX, y + 24);
+
+    // Data de geração (canto direito do bloco)
+    const now = new Date();
+    sf(7, 'normal', [130, 145, 165]);
+    doc.text(
+      'Gerado em ' + now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}),
+      W - M, y + blocoH - 5, { align: 'right' }
+    );
+
+    y += blocoH + 8;
+
+    // ── SECTION header ──
+    const drawSec = (title) => {
+      addPage(16);
+      rect(M, y, colW, 9, [240,240,240]);
+      doc.setDrawColor(220,220,220); doc.rect(M, y, colW, 9, 'S');
+      sf(10, 'bold', [26,26,26]); doc.text(title, M + 3, y + 6.2);
+      y += 13;
+    };
+
+    const drawField = (label, value) => {
+      if (!value || value === '—') return;
+      addPage(12);
+      sf(7, 'bold', [120,130,145]); doc.text(label.toUpperCase(), M, y); y += 4;
+      sf(10, 'normal', [26,26,26]);
+      const lines = doc.splitTextToSize(value, colW);
+      doc.text(lines, M, y); y += lines.length * 5.5 + 3;
+      doc.setDrawColor(238,238,238); doc.line(M, y - 1, W - M, y - 1);
+    };
+
+    // ── Identificação ──
+    drawSec('Identificação do Imóvel');
+    const tipo = document.querySelector('input[name="tipo"]:checked')?.value || '';
+    const cons = document.querySelector('input[name="conservacao"]:checked')?.value || '';
+    drawField('Proprietário', v('proprietario'));
+    drawField('Endereço / Imóvel', v('imovel'));
+    const meta = [v('data') !== '—' ? v('data') : '', v('hora') !== '—' ? v('hora') : ''].filter(Boolean).join(' às ');
+    if (meta) drawField('Data e hora', meta);
+    if (v('linkAnuncio') !== '—') drawField('Link do anúncio', v('linkAnuncio'));
+    if (tipo) drawField('Tipo', tipo);
+    if (cons) drawField('Estado de conservação', cons);
+
+    // ── Características ──
+    drawSec('Características');
+    const dorms = document.querySelector('input[name="dorms"]:checked')?.value || '';
+    const suites = document.querySelector('input[name="suites"]:checked')?.value || '';
+    const banh = document.querySelector('input[name="banheiros"]:checked')?.value || '';
+    const adics = Array.from(document.querySelectorAll('input[name="adicionais"]:checked')).map(x => x.value).join(', ');
+    if (dorms || suites || banh) drawField('Dormitórios / Suítes / Banheiros', [dorms, suites ? suites + ' suítes' : '', banh].filter(Boolean).join(' · '));
+    const vagas = v('vagas'); if (vagas !== '—') drawField('Vagas de garagem', vagas);
+    const area = v('area'); if (area !== '—') drawField('Área', area + ' m²');
+    if (adics) drawField('Adicionais', adics);
+    const vp = v('valorPedido'); if (vp !== '—') drawField('Valor pedido pelo proprietário', vp);
+
+    // ── Perguntas ──
+    drawSec('Perguntas ao Proprietário');
+    const perguntas = [
+      ['O que levou vocês a comprar este imóvel?','q1'],
+      ['O que mais gosta neste imóvel?','q2'],
+      ['Se pudesse, o que mudaria?','q3'],
+      ['Quanto tempo à venda? Motivação para vender?','q4'],
+      ['Em quais imobiliárias? Corretores?','q5'],
+      ['Precificação, plano de marketing, relatório?','q6'],
+      ['Já teve visitas? Feedback?','q7'],
+      ['Observações gerais','q8'],
+    ];
+    perguntas.forEach(([label, id]) => {
+      const val = document.getElementById(id)?.value;
+      if (val) drawField(label, val);
+    });
+
+    // ── Fotos ──
+    const allPhotos = [];
+    const secLabels = { matricula:'Matrícula', interiores:'Interiores', fachada:'Fachada', destaques:'Destaques' };
+    Object.entries(photos).forEach(([sec, arr]) => arr.forEach(p => allPhotos.push({...p, secLabel: secLabels[sec]})));
+
+    if (allPhotos.length > 0) {
+      drawSec('Fotos do Imóvel — ' + (photoMode === 'anuncio' ? 'Selecionadas do anúncio' : 'Fotografadas no local'));
+      const imgW = (colW - 8) / 3; const imgH = imgW * 0.75;
+      let col = 0; let rowStart = y;
+      for (const photo of allPhotos) {
+        addPage(imgH + 10);
+        if (col === 0) rowStart = y;
+        const x = M + col * (imgW + 4);
+        try {
+          const imgFmt = photo.src.match(/^data:image\/(\w+)/)?.[1]?.toUpperCase() || 'JPEG';
+          doc.addImage(photo.src, imgFmt, x, rowStart, imgW, imgH, undefined, 'FAST');
+          if (photo.caption) { sf(7,'normal',[100,100,100]); doc.text(photo.caption, x + imgW/2, rowStart + imgH + 3, {align:'center',maxWidth:imgW}); }
+          doc.setDrawColor(220,220,220); doc.rect(x, rowStart, imgW, imgH, 'S');
+        } catch(e){}
+        col++;
+        if (col >= 3) { col = 0; y = rowStart + imgH + 8; }
+      }
+      if (col > 0) y = rowStart + imgH + 8;
+    }
+
+    // ── Footer on every page ──
+    const total = doc.getNumberOfPages();
+    for (let p = 1; p <= total; p++) {
+      doc.setPage(p);
+      rect(0, 287, W, 10, [10,22,40]);
+      sf(7,'normal',[140,165,195]);
+      doc.text('REMAX Noble — Ficha de Visita', M, 293);
+      const cNome = JSON.parse(localStorage.getItem('corretor') || '{}').nome || '';
+      if (cNome) doc.text(cNome, W/2, 293, {align:'center'});
+      doc.text('Pág. ' + p + ' / ' + total, W - M, 293, {align:'right'});
+    }
+
+    const prop = v('proprietario').replace(/[^a-z0-9]/gi,'_').toLowerCase() || 'visita';
+    const dateStr = v('data').replace(/-/g,'');
+    doc.save(`ficha_visita_${prop}_${dateStr}.pdf`);
+    await saveVisitToCloud();
+    showToast('✅ PDF gerado e visita salva!');
+    // Resetar form e voltar para home
+    setTimeout(() => {
+      currentStep = 1;
+      Object.keys(photos).forEach(k => { photos[k] = []; });
+      document.querySelectorAll('input[type="text"],input[type="tel"],input[type="date"],input[type="time"],textarea').forEach(el => {
+        if (!['corretorNome','corretorCreci','corretorTelefone'].includes(el.id)) el.value = '';
+      });
+      document.querySelectorAll('input[type="radio"],input[type="checkbox"]').forEach(el => el.checked = false);
+      ['Matricula','Interiores','Fachada','Destaques'].forEach(s => {
+        const g = document.getElementById('grid'+s); if(g) g.innerHTML = '';
+        renderGrid(s.toLowerCase());
+      });
+      const now = new Date();
+      const dtEl = document.getElementById('data'); if(dtEl) dtEl.value = now.toISOString().split('T')[0];
+      const hrEl = document.getElementById('hora'); if(hrEl) hrEl.value = now.toTimeString().slice(0,5);
+      showHomeScreen();
+    }, 2000);
+  } catch(err) {
+    console.error(err);
+    showToast('❌ Erro ao gerar PDF. Tente novamente.');
+  }
+  document.getElementById('spinner').classList.remove('show');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
