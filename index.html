@@ -2490,79 +2490,44 @@ function closeCaptar() {
   document.getElementById('homeScreen').style.display = 'block';
 }
 
-// Busca e desenha o polígono real de um bairro via Overpass → Nominatim → círculo fallback
-async function _carregarPoligonoBairro(id, nome, lat, lng, isPrincipal) {
-  if (!_captarMap) return;
-  const style = {
-    color: '#cc0000', fillColor: '#cc0000',
-    fillOpacity: isPrincipal ? 0.10 : 0.06,
-    weight: isPrincipal ? 2.5 : 1.5,
-    dashArray: '7,5'
-  };
+// Cache único dos polígonos OSM de Santa Maria (carrega uma vez por sessão)
+let _osmBairrosCache = null;
 
-  // ── 1. Overpass API ──
+async function _carregarTodosBairrosOSM() {
+  if (_osmBairrosCache !== null) return _osmBairrosCache;
+  _osmBairrosCache = [];
   try {
-    const q = `[out:json][timeout:20];
+    // Busca TODOS os bairros de Santa Maria RS de uma vez — evita matches errados
+    const q = `[out:json][timeout:30];
+area["name"="Santa Maria"]["boundary"="administrative"]["admin_level"="8"]->.city;
 (
-  way["name"~"${nome}"]["place"~"suburb|neighbourhood|quarter"](around:20000,${lat},${lng});
-  relation["name"~"${nome}"](around:20000,${lat},${lng});
+  relation["place"~"neighbourhood|suburb|quarter"](area.city);
+  way["place"~"neighbourhood|suburb|quarter"](area.city);
+  relation["boundary"="administrative"]["admin_level"~"9|10|11"](area.city);
 );
 out geom;`;
     const resp = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'data=' + encodeURIComponent(q),
-      signal: AbortSignal.timeout(18000)
+      signal: AbortSignal.timeout(28000)
     });
     if (resp.ok) {
       const data = await resp.json();
-      for (const el of (data.elements || [])) {
-        let rings = null;
-        if (el.type === 'way' && el.geometry && el.geometry.length > 2) {
-          rings = [el.geometry.map(p => [p.lat, p.lon])];
-        } else if (el.type === 'relation' && el.members) {
-          const outer = el.members.filter(m => m.type==='way' && m.role==='outer' && m.geometry);
-          if (outer.length) rings = outer.map(m => m.geometry.map(p => [p.lat, p.lon]));
-        }
-        if (rings && rings[0] && rings[0].length > 2) {
-          const layer = L.polygon(rings, style).addTo(_captarMap);
-          layer.bindTooltip(nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
-          _bairrosLayers[id] = layer;
-          return;
-        }
-      }
+      _osmBairrosCache = data.elements || [];
     }
   } catch(e) {}
+  return _osmBairrosCache;
+}
 
-  // ── 2. Nominatim polygon_geojson ──
-  try {
-    const q = encodeURIComponent(`${nome}, Santa Maria, RS, Brasil`);
-    const resp = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=3&polygon_geojson=1&countrycodes=br`,
-      { headers: { 'User-Agent': 'REMAX-PrimeiraVisita/1.0' }, signal: AbortSignal.timeout(10000) }
-    );
-    if (resp.ok) {
-      const data = await resp.json();
-      const hit = data.find(d => d.geojson && ['Polygon','MultiPolygon'].includes(d.geojson.type));
-      if (hit) {
-        const layer = L.geoJSON(hit.geojson, { style }).addTo(_captarMap);
-        layer.bindTooltip(nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
-        _bairrosLayers[id] = layer;
-        return;
-      }
-    }
-  } catch(e) {}
-
-  // ── 3. Fallback: círculo aproximado ──
-  const layer = L.circle([lat, lng], { ...style, radius: 700 }).addTo(_captarMap);
-  layer.bindTooltip(nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
-  _bairrosLayers[id] = layer;
+// Normaliza string para comparação sem acento/case
+function _normStr(s) {
+  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
 }
 
 // Desenha polígonos reais para cada bairro de atuação selecionado
 async function _renderBairrosNoMapa() {
   if (!_captarMap) return;
-  // Remove camadas antigas
   Object.values(_bairrosLayers).forEach(l => { try { l.remove(); } catch(e){} });
   _bairrosLayers = {};
 
@@ -2571,16 +2536,50 @@ async function _renderBairrosNoMapa() {
   const outrosBairros = corretor.bairros || [];
   const todos = [...new Set([bairroPrincipalId, ...outrosBairros])];
 
-  // Processa sequencialmente (respeita rate limit do Nominatim)
-  for (const id of todos) {
-    if (id === 'dores' && _doresLayer) continue; // Dores já tem polígono próprio
+  // Carrega todos os polígonos de SM de uma vez
+  const osmEls = await _carregarTodosBairrosOSM();
+
+  todos.forEach(id => {
+    if (id === 'dores' && _doresLayer) return; // Dores já tem polígono próprio
     const b = BAIRROS_SM.find(x => x.id === id);
-    if (!b) continue;
+    if (!b) return;
+
     const isPrincipal = id === bairroPrincipalId;
-    await _carregarPoligonoBairro(id, b.nome, b.lat, b.lng, isPrincipal);
-    // Pausa de 1s entre requisições Nominatim (rate limit)
-    await new Promise(r => setTimeout(r, 1000));
-  }
+    const style = {
+      color: '#cc0000', fillColor: '#cc0000',
+      fillOpacity: isPrincipal ? 0.10 : 0.06,
+      weight: isPrincipal ? 2.5 : 1.5,
+      dashArray: '7,5'
+    };
+
+    // Tenta achar o polígono pelo nome no cache OSM
+    const nNome = _normStr(b.nome);
+    const match = osmEls.find(el => {
+      const elN = _normStr(el.tags?.name || '');
+      return elN === nNome || elN.includes(nNome) || nNome.includes(elN);
+    });
+
+    if (match) {
+      let rings = null;
+      if (match.type === 'way' && match.geometry?.length > 2) {
+        rings = [match.geometry.map(p => [p.lat, p.lon])];
+      } else if (match.type === 'relation' && match.members) {
+        const outer = match.members.filter(m => m.type==='way' && m.role==='outer' && m.geometry);
+        if (outer.length) rings = outer.map(m => m.geometry.map(p => [p.lat, p.lon]));
+      }
+      if (rings && rings[0]?.length > 2) {
+        const layer = L.polygon(rings, style).addTo(_captarMap);
+        layer.bindTooltip(b.nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
+        _bairrosLayers[id] = layer;
+        return;
+      }
+    }
+
+    // Fallback: círculo na posição correta do BAIRROS_SM
+    const layer = L.circle([b.lat, b.lng], { ...style, radius: 700 }).addTo(_captarMap);
+    layer.bindTooltip(b.nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
+    _bairrosLayers[id] = layer;
+  });
 }
 
 function abrirFormProspect() {
