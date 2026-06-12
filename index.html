@@ -2540,7 +2540,7 @@ async function _renderBairrosNoMapa() {
   const osmEls = await _carregarTodosBairrosOSM();
 
   todos.forEach(id => {
-    if (id === 'dores' && _doresLayer) return; // Dores já tem polígono próprio
+    if (id === 'dores') return; // Dores sempre tem polígono próprio via _carregarPoligonoDores()
     const b = BAIRROS_SM.find(x => x.id === id);
     if (!b) return;
 
