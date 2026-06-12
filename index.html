@@ -2575,10 +2575,7 @@ async function _renderBairrosNoMapa() {
       }
     }
 
-    // Fallback: círculo na posição correta do BAIRROS_SM
-    const layer = L.circle([b.lat, b.lng], { ...style, radius: 700 }).addTo(_captarMap);
-    layer.bindTooltip(b.nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
-    _bairrosLayers[id] = layer;
+    // OSM não tem polígono para este bairro — não exibe nada
   });
 }
 
