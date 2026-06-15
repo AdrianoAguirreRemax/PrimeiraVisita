@@ -75,6 +75,14 @@ CREATE POLICY "own_prospects" ON captar_prospects
   WITH CHECK (auth.uid() = user_id);
 
 -- ══════════════════════════════════════════════════════
+--  PASSO 6: Novas colunas em captar_prospects
+--  (telefones e data de follow-up — adicione se ainda não existirem)
+-- ══════════════════════════════════════════════════════
+
+ALTER TABLE captar_prospects ADD COLUMN IF NOT EXISTS telefones    TEXT;
+ALTER TABLE captar_prospects ADD COLUMN IF NOT EXISTS followup_date TEXT;
+
+-- ══════════════════════════════════════════════════════
 --  Deve aparecer "Success". Depois suba o index.html
 --  no GitHub Pages e teste o app no celular.
 -- ══════════════════════════════════════════════════════

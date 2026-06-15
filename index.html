@@ -638,8 +638,9 @@
     <button onclick="closeCaptar()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;">← Voltar</button>
     <div style="flex:1;">
       <div style="color:#fff;font-size:17px;font-weight:700;">🗺️ Captar Imóveis</div>
-      <div style="color:rgba(255,255,255,0.5);font-size:11px;">Bairro Dores · Santa Maria / RS</div>
+      <div id="captarSubtitulo" style="color:rgba(255,255,255,0.5);font-size:11px;">Santa Maria / RS</div>
     </div>
+    <button onclick="abrirArquivo()" title="Arquivo de Descartados" style="background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);color:#fff;border-radius:8px;padding:8px 10px;font-size:14px;cursor:pointer;margin-right:4px;">📁</button>
     <button onclick="abrirFormProspect()" style="background:#cc0000;border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">+ Adicionar</button>
   </div>
 
@@ -716,6 +717,11 @@
         <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">PROPRIETÁRIO / CONTATO</label>
         <input id="pProprietario" type="text" placeholder="Nome do proprietário" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
       </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">TELEFONES</label>
+        <div id="telefonesLista" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <button type="button" onclick="adicionarTelefone()" style="margin-top:6px;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%;box-sizing:border-box;">+ Adicionar telefone</button>
+      </div>
       <div style="display:flex;gap:10px;">
         <div style="flex:1;">
           <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">VALOR PEDIDO</label>
@@ -747,6 +753,37 @@
       <input type="hidden" id="pEditId">
       <button onclick="salvarProspect()" id="btnSalvarProspect" style="background:#cc0000;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">💾 Salvar Imóvel</button>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: Follow-up date picker -->
+<div id="followupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:calc(100% - 48px);max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+    <div style="font-size:17px;font-weight:700;color:#0a1628;margin-bottom:4px;">📅 Follow-up</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Data do próximo contato com o proprietário</div>
+    <input type="hidden" id="followupId">
+    <input type="date" id="followupDate" style="width:100%;padding:11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:15px;outline:none;box-sizing:border-box;margin-bottom:16px;">
+    <div style="display:flex;gap:10px;">
+      <button onclick="document.getElementById('followupModal').style.display='none';renderCaptarProspects();" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;background:#fff;cursor:pointer;color:#374151;">Cancelar</button>
+      <button onclick="confirmarFollowup()" style="flex:1;padding:12px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Arquivo de descartados -->
+<div id="arquivoModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1200;align-items:flex-end;justify-content:center;">
+  <div style="background:#f3f4f6;border-radius:20px 20px 0 0;width:100%;max-width:520px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 -4px 24px rgba(0,0,0,0.2);">
+    <div style="padding:16px 20px;background:#fff;border-radius:20px 20px 0 0;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#0a1628;">📁 Arquivo</div>
+        <div style="font-size:12px;color:#6b7280;">Imóveis descartados — mantidos para consulta</div>
+      </div>
+      <button onclick="fecharArquivo()" style="background:#f3f4f6;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <div style="padding:10px 14px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
+      <input id="arquivoBusca" type="text" placeholder="Buscar por endereço ou proprietário..." oninput="filtrarArquivo()" style="width:100%;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;box-sizing:border-box;">
+    </div>
+    <div id="arquivoLista" style="flex:1;overflow-y:auto;padding:12px 14px;"></div>
   </div>
 </div>
 
@@ -2368,7 +2405,7 @@ const DORES_POLY_COORDS = [
   [-29.6860, -53.8125], // volta ao NW
 ];
 
-function _desenharPoligonoFallback() {
+function _desenharPoligonoFallback(skipFitBounds = false) {
   if (_doresLayer) return;
   _doresLayer = L.polygon(DORES_POLY_COORDS, {
     color: '#cc0000', fillColor: '#cc0000', fillOpacity: 0.08, weight: 2.5, dashArray: '7,5'
@@ -2376,10 +2413,10 @@ function _desenharPoligonoFallback() {
   _doresLayer.bindTooltip('Nossa Senhora das Dores', {
     permanent: true, direction: 'center', className: 'leaflet-bairro-label'
   });
-  _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
+  if (!skipFitBounds) _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
 }
 
-async function _carregarPoligonoDores() {
+async function _carregarPoligonoDores(skipFitBounds = false) {
   if (!_captarMap) return;
 
   // ── 1. Overpass API — funciona direto do browser (CORS habilitado) ──
@@ -2414,7 +2451,7 @@ out geom;`;
           _doresLayer.bindTooltip('Nossa Senhora das Dores', {
             permanent: true, direction: 'center', className: 'leaflet-bairro-label'
           });
-          _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
+          if (!skipFitBounds) _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
           return;
         }
       }
@@ -2438,14 +2475,14 @@ out geom;`;
         _doresLayer.bindTooltip('Nossa Senhora das Dores', {
           permanent: true, direction: 'center', className: 'leaflet-bairro-label'
         });
-        _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
+        if (!skipFitBounds) _captarMap.fitBounds(_doresLayer.getBounds(), { padding: [30, 30], maxZoom: 16 });
         return;
       }
     }
   } catch(e) {}
 
   // ── 3. Fallback: polígono hardcoded ──
-  _desenharPoligonoFallback();
+  _desenharPoligonoFallback(skipFitBounds);
 }
 
 async function openCaptar() {
@@ -2468,6 +2505,8 @@ async function openCaptar() {
     const bairroInfo = BAIRROS_SM.find(b => b.id === bairroPrincipalId) || BAIRROS_SM[0];
     const centerLat = bairroInfo.lat;
     const centerLng = bairroInfo.lng;
+    const subtEl = document.getElementById('captarSubtitulo');
+    if (subtEl) subtEl.textContent = bairroInfo.nome + ' · Santa Maria / RS';
 
     if (!_captarMap) {
       _captarMap = L.map('captarMap', { zoomControl: true }).setView([centerLat, centerLng], DORES_ZOOM);
@@ -2475,7 +2514,8 @@ async function openCaptar() {
         attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
         maxZoom: 19
       }).addTo(_captarMap);
-      _carregarPoligonoDores();
+      const skipDoresFit = (bairroPrincipalId !== 'dores');
+      _carregarPoligonoDores(skipDoresFit);
     } else {
       _captarMap.setView([centerLat, centerLng], DORES_ZOOM);
       _captarMap.invalidateSize();
@@ -2490,39 +2530,105 @@ function closeCaptar() {
   document.getElementById('homeScreen').style.display = 'block';
 }
 
-// Cache único dos polígonos OSM de Santa Maria (carrega uma vez por sessão)
-let _osmBairrosCache = null;
+// Polígonos hardcoded derivados de Google Maps (mesma técnica do Dores)
+// Cada array: [[lat, lng], ...] traçado manualmente sobre o pontilhado do Google Maps
+const BAIRROS_POLYS_HARDCODED = {
+  centro: [
+    [-29.6724, -53.8108], // N — Vila Belga / topo da fronteira
+    [-29.6722, -53.8082], // N — topo, próx. Av. Rio Branco
+    [-29.6742, -53.8032], // NE — diagonal (ferrovia)
+    [-29.6772, -53.8008], // E — lado direito superior
+    [-29.6830, -53.8008], // E — lado direito médio
+    [-29.6892, -53.8040], // SE — Av. Fernando Ferrari
+    [-29.6892, -53.8120], // S — fundo esquerdo (Av. Medianeira)
+    [-29.6793, -53.8120], // W — antes do chanfro
+    [-29.6793, -53.8132], // W — chanfro (recuo oeste)
+    [-29.6772, -53.8132], // W — chanfro norte
+    [-29.6772, -53.8120], // W — volta à fronteira principal
+    [-29.6724, -53.8108], // volta ao N
+  ],
+};
 
-async function _carregarTodosBairrosOSM() {
-  if (_osmBairrosCache !== null) return _osmBairrosCache;
-  _osmBairrosCache = [];
+// Expande abreviações para busca nos APIs
+function _nomeCompleto(nome) {
+  return nome
+    .replace(/Nossa Sra\./g, 'Nossa Senhora')
+    .replace(/N\.Sra\./g,    'Nossa Senhora')
+    .replace(/Pres\./g,      'Presidente')
+    .replace(/J\.\s*L\.\s*/g,'João Luiz ');
+}
+
+// Carrega polígono de um bairro: hardcoded → Overpass → Nominatim (restrito a SM) → nada
+async function _carregarPoligonoBairro(id, nome, lat, lng, isPrincipal) {
+  if (!_captarMap) return;
+  const nomeOsm = _nomeCompleto(nome);
+  const style = {
+    color: '#cc0000', fillColor: '#cc0000',
+    fillOpacity: isPrincipal ? 0.10 : 0.06,
+    weight: isPrincipal ? 2.5 : 1.5,
+    dashArray: '7,5'
+  };
+
+  // ── 0. Hardcoded (máxima precisão — derivado do Google Maps) ──
+  if (BAIRROS_POLYS_HARDCODED[id]) {
+    const layer = L.polygon(BAIRROS_POLYS_HARDCODED[id], style).addTo(_captarMap);
+    layer.bindTooltip(nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
+    _bairrosLayers[id] = layer;
+    return;
+  }
+
+  // ── 1. Overpass: nome exato dentro de 12km do centro do bairro ──
   try {
-    // Busca TODOS os bairros de Santa Maria RS de uma vez — evita matches errados
-    const q = `[out:json][timeout:30];
-area["name"="Santa Maria"]["boundary"="administrative"]["admin_level"="8"]->.city;
+    const q = `[out:json][timeout:15];
 (
-  relation["place"~"neighbourhood|suburb|quarter"](area.city);
-  way["place"~"neighbourhood|suburb|quarter"](area.city);
-  relation["boundary"="administrative"]["admin_level"~"9|10|11"](area.city);
+  way["name"~"${nomeOsm}"]["place"~"suburb|neighbourhood|quarter"](around:12000,${lat},${lng});
+  relation["name"~"${nomeOsm}"](around:12000,${lat},${lng});
 );
 out geom;`;
     const resp = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'data=' + encodeURIComponent(q),
-      signal: AbortSignal.timeout(28000)
+      signal: AbortSignal.timeout(14000)
     });
     if (resp.ok) {
       const data = await resp.json();
-      _osmBairrosCache = data.elements || [];
+      for (const el of (data.elements || [])) {
+        let rings = null;
+        if (el.type === 'way' && el.geometry?.length > 2) {
+          rings = [el.geometry.map(p => [p.lat, p.lon])];
+        } else if (el.type === 'relation' && el.members) {
+          const outer = el.members.filter(m => m.type==='way' && m.role==='outer' && m.geometry);
+          if (outer.length) rings = outer.map(m => m.geometry.map(p => [p.lat, p.lon]));
+        }
+        if (rings && rings[0]?.length > 2) {
+          const layer = L.polygon(rings, style).addTo(_captarMap);
+          layer.bindTooltip(nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
+          _bairrosLayers[id] = layer;
+          return;
+        }
+      }
     }
   } catch(e) {}
-  return _osmBairrosCache;
-}
 
-// Normaliza string para comparação sem acento/case
-function _normStr(s) {
-  return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+  // ── 2. Nominatim com viewbox restrito a Santa Maria ──
+  try {
+    const q = encodeURIComponent(`${nomeOsm}, Santa Maria, RS`);
+    const resp = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&polygon_geojson=1&countrycodes=br&viewbox=-53.97,-29.82,-53.68,-29.58&bounded=1`,
+      { headers: { 'User-Agent': 'REMAX-PrimeiraVisita/1.0' }, signal: AbortSignal.timeout(8000) }
+    );
+    if (resp.ok) {
+      const data = await resp.json();
+      const hit = data.find(d => d.geojson && ['Polygon','MultiPolygon'].includes(d.geojson.type));
+      if (hit) {
+        const layer = L.geoJSON(hit.geojson, { style }).addTo(_captarMap);
+        layer.bindTooltip(nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
+        _bairrosLayers[id] = layer;
+      }
+    }
+  } catch(e) {}
+  // Se não encontrar — não exibe nada (sem círculo)
 }
 
 // Desenha polígonos reais para cada bairro de atuação selecionado
@@ -2536,47 +2642,16 @@ async function _renderBairrosNoMapa() {
   const outrosBairros = corretor.bairros || [];
   const todos = [...new Set([bairroPrincipalId, ...outrosBairros])];
 
-  // Carrega todos os polígonos de SM de uma vez
-  const osmEls = await _carregarTodosBairrosOSM();
-
-  todos.forEach(id => {
-    if (id === 'dores') return; // Dores sempre tem polígono próprio via _carregarPoligonoDores()
-    const b = BAIRROS_SM.find(x => x.id === id);
-    if (!b) return;
-
-    const isPrincipal = id === bairroPrincipalId;
-    const style = {
-      color: '#cc0000', fillColor: '#cc0000',
-      fillOpacity: isPrincipal ? 0.10 : 0.06,
-      weight: isPrincipal ? 2.5 : 1.5,
-      dashArray: '7,5'
-    };
-
-    // Tenta achar o polígono pelo nome no cache OSM
-    const nNome = _normStr(b.nome);
-    const match = osmEls.find(el => {
-      const elN = _normStr(el.tags?.name || '');
-      return elN === nNome || elN.includes(nNome) || nNome.includes(elN);
-    });
-
-    if (match) {
-      let rings = null;
-      if (match.type === 'way' && match.geometry?.length > 2) {
-        rings = [match.geometry.map(p => [p.lat, p.lon])];
-      } else if (match.type === 'relation' && match.members) {
-        const outer = match.members.filter(m => m.type==='way' && m.role==='outer' && m.geometry);
-        if (outer.length) rings = outer.map(m => m.geometry.map(p => [p.lat, p.lon]));
-      }
-      if (rings && rings[0]?.length > 2) {
-        const layer = L.polygon(rings, style).addTo(_captarMap);
-        layer.bindTooltip(b.nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
-        _bairrosLayers[id] = layer;
-        return;
-      }
-    }
-
-    // OSM não tem polígono para este bairro — não exibe nada
-  });
+  // Carrega todos em paralelo (Overpass não tem rate limit estrito)
+  await Promise.all(
+    todos
+      .filter(id => id !== 'dores') // Dores tem handler próprio
+      .map(id => {
+        const b = BAIRROS_SM.find(x => x.id === id);
+        if (!b) return Promise.resolve();
+        return _carregarPoligonoBairro(id, b.nome, b.lat, b.lng, id === bairroPrincipalId);
+      })
+  );
 }
 
 function abrirFormProspect() {
@@ -2588,6 +2663,7 @@ function abrirFormProspect() {
   document.getElementById('geoStatus').textContent = '';
   document.getElementById('prospectModalTitle').textContent = 'Cadastrar Imóvel';
   document.getElementById('btnSalvarProspect').textContent = '💾 Salvar Imóvel';
+  _initTelefones([]);
   document.getElementById('prospectModal').style.display = 'flex';
 }
 
@@ -2690,6 +2766,7 @@ async function salvarProspect() {
       obs:          document.getElementById('pObs').value.trim(),
       lat:          parseFloat(document.getElementById('pLat').value) || existente?.lat || null,
       lng:          parseFloat(document.getElementById('pLng').value) || existente?.lng || null,
+      telefones:    JSON.stringify(_getTelefones()),
       updated_at:   new Date().toISOString(),
     };
     const { error } = await supa.from('captar_prospects').update(atualizado).eq('id', editId);
@@ -2714,6 +2791,7 @@ async function salvarProspect() {
     obs:          document.getElementById('pObs').value.trim(),
     lat:          parseFloat(document.getElementById('pLat').value) || null,
     lng:          parseFloat(document.getElementById('pLng').value) || null,
+    telefones:    JSON.stringify(_getTelefones()),
     status:       'prospecto',
     created_at:   new Date().toISOString(),
   };
@@ -3088,6 +3166,7 @@ function editarProspect(id) {
   document.getElementById('geoStatus').style.color = '#16a34a';
   document.getElementById('prospectModalTitle').textContent = 'Editar Imóvel';
   document.getElementById('btnSalvarProspect').textContent  = '💾 Atualizar Imóvel';
+  try { _initTelefones(JSON.parse(p.telefones || '[]')); } catch(e) { _initTelefones([]); }
   document.getElementById('prospectModal').style.display = 'flex';
 }
 
@@ -3103,122 +3182,268 @@ async function deletarProspect(id) {
   renderCaptarProspects();
 }
 
-async function alterarStatusProspect(id, novoStatus) {
+async function alterarStatusProspect(id, novoStatus, followupDate = null) {
+  // Se escolheu follow-up mas sem data, abre o modal para pedir a data
+  if (novoStatus === 'followup' && !followupDate) {
+    document.getElementById('followupId').value = id;
+    document.getElementById('followupDate').value = '';
+    document.getElementById('followupModal').style.display = 'flex';
+    return;
+  }
+  const updateData = { status: novoStatus, updated_at: new Date().toISOString() };
+  if (followupDate) updateData.followup_date = followupDate;
   if (currentUser) {
-    await supa.from('captar_prospects').update({ status: novoStatus, updated_at: new Date().toISOString() }).eq('id', id);
+    await supa.from('captar_prospects').update(updateData).eq('id', id);
   }
   const p = _prospectsCache.find(x => x.id === id);
-  if (p) { p.status = novoStatus; localStorage.setItem('captarProspects', JSON.stringify(_prospectsCache)); }
+  if (p) {
+    p.status = novoStatus;
+    if (followupDate) p.followup_date = followupDate;
+    localStorage.setItem('captarProspects', JSON.stringify(_prospectsCache));
+  }
   renderCaptarProspects();
 }
 
+// ─── TELEFONES ────────────────────────────────────────────────────────────────
+
+function _initTelefones(arr) {
+  const lista = document.getElementById('telefonesLista');
+  if (!lista) return;
+  lista.innerHTML = '';
+  if (!arr || !arr.length) {
+    _adicionarTelefoneRow('');
+  } else {
+    arr.forEach(tel => _adicionarTelefoneRow(tel));
+  }
+}
+
+function _adicionarTelefoneRow(val) {
+  const lista = document.getElementById('telefonesLista');
+  if (!lista) return;
+  const row = document.createElement('div');
+  row.className = 'tel-row';
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  row.innerHTML = `
+    <input type="tel" value="${(val || '').replace(/"/g,'&quot;')}" placeholder="(55) 99999-9999"
+      style="flex:1;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+    <button type="button" onclick="this.parentElement.remove()"
+      style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 10px;font-size:14px;cursor:pointer;flex-shrink:0;">✕</button>
+  `;
+  lista.appendChild(row);
+}
+
+function adicionarTelefone() {
+  _adicionarTelefoneRow('');
+}
+
+function _getTelefones() {
+  const lista = document.getElementById('telefonesLista');
+  if (!lista) return [];
+  return [...lista.querySelectorAll('input[type=tel]')]
+    .map(i => i.value.trim())
+    .filter(v => v.length > 0);
+}
+
+// ─── FOLLOW-UP ─────────────────────────────────────────────────────────────
+
+function confirmarFollowup() {
+  const id   = document.getElementById('followupId').value;
+  const data = document.getElementById('followupDate').value;
+  if (!data) { showToast('⚠️ Selecione uma data'); return; }
+  document.getElementById('followupModal').style.display = 'none';
+  alterarStatusProspect(id, 'followup', data);
+}
+
+function _formatarData(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+// ─── ARQUIVO DE DESCARTADOS ───────────────────────────────────────────────
+
+function abrirArquivo() {
+  document.getElementById('arquivoBusca').value = '';
+  _renderArquivo('');
+  document.getElementById('arquivoModal').style.display = 'flex';
+}
+
+function fecharArquivo() {
+  document.getElementById('arquivoModal').style.display = 'none';
+}
+
+function filtrarArquivo() {
+  const filtro = document.getElementById('arquivoBusca').value.toLowerCase();
+  _renderArquivo(filtro);
+}
+
+function _renderArquivo(filtro) {
+  const descartados = _prospectsCache.filter(p => p.status === 'descartado');
+  const filtered = filtro
+    ? descartados.filter(p => (p.endereco + ' ' + (p.proprietario || '')).toLowerCase().includes(filtro))
+    : descartados;
+  const el = document.getElementById('arquivoLista');
+  if (!filtered.length) {
+    el.innerHTML = `<div style="text-align:center;color:#9ca3af;padding:24px;font-size:14px;">
+      ${filtro ? 'Nenhum resultado para esta busca.' : 'Nenhum imóvel descartado ainda.'}
+    </div>`;
+    return;
+  }
+  el.innerHTML = filtered.map(p => {
+    let telesHtml = '';
+    try {
+      const tels = JSON.parse(p.telefones || '[]');
+      if (tels.length) telesHtml = `<div style="font-size:12px;color:#374151;margin-top:3px;">📞 ${tels.join(' · ')}</div>`;
+    } catch(e) {}
+    const dataDesc = p.updated_at ? ` · ${new Date(p.updated_at).toLocaleDateString('pt-BR')}` : '';
+    return `
+    <div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border-left:3px solid #dc2626;">
+      <div style="font-size:14px;font-weight:700;color:#0a1628;">${p.endereco}</div>
+      ${p.proprietario ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">👤 ${p.proprietario}${dataDesc}</div>` : `<div style="font-size:11px;color:#9ca3af;">Descartado${dataDesc}</div>`}
+      ${telesHtml}
+      ${p.valor ? `<div style="font-size:12px;font-weight:700;color:#cc0000;margin-top:2px;">${p.valor}</div>` : ''}
+      ${p.obs ? `<div style="font-size:12px;color:#374151;background:#f9fafb;border-radius:6px;padding:5px 8px;margin-top:6px;">${p.obs}</div>` : ''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">
+        <button onclick="reativarProspect('${p.id}')" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">↩️ Reativar</button>
+        ${p.link ? `<button onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">🔗 Anúncio</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function reativarProspect(id) {
+  await alterarStatusProspect(id, 'prospecto');
+  fecharArquivo();
+  showToast('✅ Imóvel reativado como Prospecto');
+}
+
+// ─── RENDER PROSPECTS ──────────────────────────────────────────────────────
+
 function renderCaptarProspects() {
-  const lista = _prospectsCache;
+  const listaCompleta = _prospectsCache;
+  // Descartados vão para o arquivo — não aparecem na lista principal
+  const lista = listaCompleta.filter(p => p.status !== 'descartado');
   const listEl = document.getElementById('captarList');
 
-  // Limpa markers antigos
+  // Limpa markers antigos (só não-descartados são plotados)
   Object.values(_captarMarkers).forEach(m => m.remove());
   _captarMarkers = {};
 
   if (!lista.length) {
+    const descQtd = listaCompleta.filter(p => p.status === 'descartado').length;
     listEl.innerHTML = `<div style="text-align:center;color:#9ca3af;padding:24px;font-size:14px;">
-      Nenhum imóvel cadastrado ainda.<br>Toque em <strong>+ Adicionar</strong> para incluir um imóvel prospectado.
+      Nenhum imóvel ativo.<br>Toque em <strong>+ Adicionar</strong> para incluir um imóvel prospectado.
+      ${descQtd ? `<div style="margin-top:12px;"><button onclick="abrirArquivo()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">📁 Ver ${descQtd} descartado(s)</button></div>` : ''}
     </div>`;
     return;
   }
 
-  const statusCor  = { prospecto:'#6b7280', visitado:'#0a1628', captado:'#16a34a', descartado:'#dc2626' };
-  const statusIcon = { prospecto:'🔍', visitado:'👁️', captado:'✅', descartado:'❌' };
+  const statusCor  = { prospecto:'#6b7280', visitado:'#0a1628', captado:'#16a34a', followup:'#d97706' };
+  const statusLabel = { prospecto:'Prospecto', visitado:'Visitado', captado:'Captado', followup:'Follow-up' };
+  const statusIcon = { prospecto:'🔍', visitado:'👁️', captado:'✅', followup:'📅' };
 
-  // Adiciona markers no mapa
+  // Adiciona markers no mapa para itens com coordenadas
   if (_captarMap) {
     lista.forEach(p => {
       if (!p.lat || !p.lng) return;
-      // Cores do pin por status
       const pinColors = {
-        captado:    { top1:'#14532d', top2:'#16a34a', mid:'#f0fdf4', bot1:'#14532d', bot2:'#16a34a', border:'#166534' },
-        descartado: { top1:'#4b5563', top2:'#9ca3af', mid:'#f3f4f6', bot1:'#374151', bot2:'#9ca3af', border:'#6b7280' },
-        visitado:   { top1:'#1e3a5f', top2:'#2563eb', mid:'#eff6ff', bot1:'#1e3a5f', bot2:'#2563eb', border:'#1d4ed8' },
-        prospecto:  { top1:'#7f1d1d', top2:'#cc0000', mid:'#fff7f7', bot1:'#1e3a5f', bot2:'#2563eb', border:'#cc0000' },
+        captado:   { top1:'#14532d', top2:'#16a34a', mid:'#f0fdf4', bot1:'#14532d', bot2:'#16a34a', border:'#166534' },
+        visitado:  { top1:'#1e3a5f', top2:'#2563eb', mid:'#eff6ff', bot1:'#1e3a5f', bot2:'#2563eb', border:'#1d4ed8' },
+        followup:  { top1:'#78350f', top2:'#d97706', mid:'#fffbeb', bot1:'#78350f', bot2:'#d97706', border:'#d97706' },
+        prospecto: { top1:'#7f1d1d', top2:'#cc0000', mid:'#fff7f7', bot1:'#1e3a5f', bot2:'#2563eb', border:'#cc0000' },
       };
       const c = pinColors[p.status] || pinColors.prospecto;
       const icon = L.divIcon({
         className: '',
         html: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
-          <defs>
-            <clipPath id="pin-clip-${p.id}">
-              <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z"/>
-            </clipPath>
-          </defs>
-          <!-- Sombra -->
+          <defs><clipPath id="pin-clip-${p.id}"><path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z"/></clipPath></defs>
           <ellipse cx="18" cy="42" rx="6" ry="2" fill="rgba(0,0,0,0.25)"/>
-          <!-- Shape do pin com borda -->
-          <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z"
-            fill="white" stroke="${c.border}" stroke-width="1.5"/>
-          <!-- Quadrante sup-esq -->
+          <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z" fill="white" stroke="${c.border}" stroke-width="1.5"/>
           <rect x="1" y="2" width="17" height="20" fill="${c.top1}" clip-path="url(#pin-clip-${p.id})"/>
-          <!-- Quadrante sup-dir -->
           <rect x="18" y="2" width="17" height="20" fill="${c.top2}" clip-path="url(#pin-clip-${p.id})"/>
-          <!-- Faixa branca do meio -->
           <rect x="1" y="17" width="34" height="7" fill="${c.mid}" clip-path="url(#pin-clip-${p.id})"/>
-          <!-- Quadrante inf-esq -->
           <rect x="1" y="24" width="17" height="20" fill="${c.bot1}" clip-path="url(#pin-clip-${p.id})"/>
-          <!-- Quadrante inf-dir -->
           <rect x="18" y="24" width="17" height="20" fill="${c.bot2}" clip-path="url(#pin-clip-${p.id})"/>
-          <!-- Linha vertical central -->
           <line x1="18" y1="2" x2="18" y2="42" stroke="white" stroke-width="1" opacity="0.6" clip-path="url(#pin-clip-${p.id})"/>
-          <!-- Borda final por cima -->
-          <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z"
-            fill="none" stroke="white" stroke-width="2.5"/>
+          <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z" fill="none" stroke="white" stroke-width="2.5"/>
         </svg>`,
         iconSize: [36, 44], iconAnchor: [18, 42], popupAnchor: [0, -44]
       });
+      let telPopup = '';
+      try { const t = JSON.parse(p.telefones||'[]'); if(t.length) telPopup = '📞 ' + t.join(', ') + '<br>'; } catch(e){}
       const popup = `<div style="font-size:13px;line-height:1.5;min-width:180px;">
         <strong>${p.endereco}</strong><br>
         ${p.proprietario ? '👤 ' + p.proprietario + '<br>' : ''}
+        ${telPopup}
         ${p.valor ? '💰 ' + p.valor + '<br>' : ''}
         ${p.link ? `<a href="${p.link}" onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');return false;" style="color:#cc0000;font-weight:700;cursor:pointer;">🔗 Ver anúncio</a>` : ''}
       </div>`;
-      const marker = L.marker([p.lat, p.lng], { icon }).addTo(_captarMap).bindPopup(popup);
-      _captarMarkers[p.id] = marker;
+      _captarMarkers[p.id] = L.marker([p.lat, p.lng], { icon }).addTo(_captarMap).bindPopup(popup);
     });
   }
 
-  // Lista de cards
+  // Helper: renderiza um card de prospect
+  const cardHtml = p => {
+    const sc = statusCor[p.status] || '#6b7280';
+    const si = statusIcon[p.status] || '🔍';
+    const sl = statusLabel[p.status] || p.status;
+    let telesHtml = '';
+    try {
+      const tels = JSON.parse(p.telefones || '[]');
+      if (tels.length) telesHtml = `<div style="font-size:12px;color:#374151;margin-top:3px;">📞 ${tels.join(' · ')}</div>`;
+    } catch(e) {}
+    const fuBadge = (p.status === 'followup' && p.followup_date)
+      ? `<div style="font-size:11px;background:#fffbeb;color:#92400e;border-radius:6px;padding:3px 8px;margin-top:5px;display:inline-block;border:1px solid #fde68a;">📅 Próx. contato: ${_formatarData(p.followup_date)}</div>`
+      : '';
+    return `
+    <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:#0a1628;">${p.endereco}</div>
+          ${p.proprietario ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">👤 ${p.proprietario}</div>` : ''}
+          ${telesHtml}
+          ${p.valor ? `<div style="font-size:13px;font-weight:700;color:#cc0000;margin-top:2px;">${p.valor}</div>` : ''}
+          ${p.tipo ? `<div style="font-size:11px;color:#6b7280;">${p.tipo}</div>` : ''}
+          ${fuBadge}
+        </div>
+        <span style="background:${sc}20;color:${sc};border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0;">${si} ${sl}</span>
+      </div>
+      ${p.obs ? `<div style="font-size:12px;color:#374151;background:#f9fafb;border-radius:6px;padding:6px 8px;margin-bottom:8px;">${p.obs}</div>` : ''}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <button onclick="iniciarVisitaFromProspect('${p.id}')" style="background:#cc0000;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🏠 Iniciar Visita</button>
+        ${p.link ? `<button onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🔗 Anúncio</button>` : ''}
+        ${p.lat && p.lng ? `<button onclick="focarNoMapa('${p.id}',${p.lat},${p.lng})" style="background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;">📍 Mapa</button>` : ''}
+        <select onchange="alterarStatusProspect('${p.id}',this.value)" style="border:1px solid #e5e7eb;border-radius:8px;padding:5px 8px;font-size:12px;background:#fff;cursor:pointer;color:#374151;">
+          <option value="prospecto"  ${p.status==='prospecto'?'selected':''}>🔍 Prospecto</option>
+          <option value="visitado"   ${p.status==='visitado'?'selected':''}>👁️ Visitado</option>
+          <option value="captado"    ${p.status==='captado'?'selected':''}>✅ Captado</option>
+          <option value="followup"   ${p.status==='followup'?'selected':''}>📅 Follow-up</option>
+          <option value="descartado" ${p.status==='descartado'?'selected':''}>❌ Descartado</option>
+        </select>
+        <button onclick="editarProspect('${p.id}')" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">✏️ Editar</button>
+        <button onclick="deletarProspect('${p.id}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;margin-left:auto;">🗑️</button>
+      </div>
+    </div>`;
+  };
+
+  const followups = lista.filter(p => p.status === 'followup')
+    .sort((a,b) => (a.followup_date||'').localeCompare(b.followup_date||''));
+  const ativos = lista.filter(p => p.status !== 'followup');
+  const descQtd = listaCompleta.filter(p => p.status === 'descartado').length;
+
   listEl.innerHTML = `
-    <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">
-      ${lista.length} imóvel(eis) cadastrado(s)
+    <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+      <span>${lista.length} imóvel(eis) ativo(s)</span>
+      ${descQtd ? `<button onclick="abrirArquivo()" style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">📁 Arquivo <span style="background:#dc2626;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;">${descQtd}</span></button>` : ''}
     </div>
-    ${lista.map(p => {
-      const sc = statusCor[p.status] || '#6b7280';
-      const si = statusIcon[p.status] || '🔍';
-      return `
-      <div style="background:#fff;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 6px rgba(0,0,0,0.07);">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;">
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:700;color:#0a1628;">${p.endereco}</div>
-            ${p.proprietario ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">👤 ${p.proprietario}</div>` : ''}
-            ${p.valor ? `<div style="font-size:13px;font-weight:700;color:#cc0000;margin-top:2px;">${p.valor}</div>` : ''}
-            ${p.tipo ? `<div style="font-size:11px;color:#6b7280;">${p.tipo}</div>` : ''}
-          </div>
-          <span style="background:${sc}20;color:${sc};border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap;">${si} ${p.status}</span>
-        </div>
-        ${p.obs ? `<div style="font-size:12px;color:#374151;background:#f9fafb;border-radius:6px;padding:6px 8px;margin-bottom:8px;">${p.obs}</div>` : ''}
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-          <button onclick="iniciarVisitaFromProspect('${p.id}')" style="background:#cc0000;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🏠 Iniciar Visita</button>
-          ${p.link ? `<button onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">🔗 Anúncio</button>` : ''}
-          ${p.lat && p.lng ? `<button onclick="focarNoMapa('${p.id}',${p.lat},${p.lng})" style="background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;">📍 Mapa</button>` : ''}
-          <select onchange="alterarStatusProspect('${p.id}',this.value)" style="border:1px solid #e5e7eb;border-radius:8px;padding:5px 8px;font-size:12px;background:#fff;cursor:pointer;color:#374151;">
-            <option value="prospecto" ${p.status==='prospecto'?'selected':''}>🔍 Prospecto</option>
-            <option value="visitado"  ${p.status==='visitado'?'selected':''}>👁️ Visitado</option>
-            <option value="captado"   ${p.status==='captado'?'selected':''}>✅ Captado</option>
-            <option value="descartado"${p.status==='descartado'?'selected':''}>❌ Descartado</option>
-          </select>
-          <button onclick="editarProspect('${p.id}')" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;">✏️ Editar</button>
-          <button onclick="deletarProspect('${p.id}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;margin-left:auto;">🗑️</button>
-        </div>
-      </div>`;
-    }).join('')}
+    ${followups.length ? `
+      <div style="font-size:11px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding:7px 10px;background:#fffbeb;border-radius:8px;border:1px solid #fde68a;">
+        📅 FOLLOW-UP · ${followups.length} item(s)
+      </div>
+      ${followups.map(cardHtml).join('')}
+      ${ativos.length ? '<div style="height:1px;background:#e5e7eb;margin:10px 0;"></div>' : ''}
+    ` : ''}
+    ${ativos.map(cardHtml).join('')}
   `;
 }
 
