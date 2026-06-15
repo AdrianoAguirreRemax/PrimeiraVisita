@@ -746,6 +746,20 @@
         <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">OBSERVAÇÕES</label>
         <textarea id="pObs" rows="2" placeholder="Ex: 3 dorms, boa localização, proprietário motivado..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:none;"></textarea>
       </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">STATUS</label>
+        <select id="pStatus" onchange="toggleFollowupDateField()" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;color:#374151;">
+          <option value="prospecto">🔍 Prospecto</option>
+          <option value="visitado">👁️ Visitado</option>
+          <option value="captado">✅ Captado</option>
+          <option value="followup">📅 Follow-up</option>
+          <option value="descartado">❌ Descartado</option>
+        </select>
+      </div>
+      <div id="pFollowupDateRow" style="display:none;">
+        <label style="font-size:12px;font-weight:700;color:#d97706;display:block;margin-bottom:4px;">📅 DATA DO PRÓXIMO CONTATO</label>
+        <input type="date" id="pFollowupDate" style="width:100%;padding:10px;border:1.5px solid #fde68a;border-radius:8px;font-size:14px;outline:none;background:#fffbeb;box-sizing:border-box;">
+      </div>
       <!-- Campos ocultos -->
       <input type="hidden" id="pLat">
       <input type="hidden" id="pLng">
@@ -2689,12 +2703,19 @@ async function _renderBairrosNoMapa() {
   );
 }
 
+function toggleFollowupDateField() {
+  const show = document.getElementById('pStatus').value === 'followup';
+  document.getElementById('pFollowupDateRow').style.display = show ? 'block' : 'none';
+}
+
 function abrirFormProspect() {
   // Limpa campos
-  ['pEndereco','pProprietario','pValor','pLink','pObs','pLat','pLng','pEditId'].forEach(id => {
+  ['pEndereco','pProprietario','pValor','pLink','pObs','pLat','pLng','pEditId','pFollowupDate'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('pTipo').value = '';
+  document.getElementById('pStatus').value = 'prospecto';
+  document.getElementById('pFollowupDateRow').style.display = 'none';
   document.getElementById('geoStatus').textContent = '';
   document.getElementById('prospectModalTitle').textContent = 'Cadastrar Imóvel';
   document.getElementById('btnSalvarProspect').textContent = '💾 Salvar Imóvel';
@@ -2791,18 +2812,23 @@ async function salvarProspect() {
 
   if (editId) {
     const existente = _prospectsCache.find(p => p.id === editId);
+    const novoStatus  = document.getElementById('pStatus').value || 'prospecto';
+    const fuDate      = (novoStatus === 'followup') ? (document.getElementById('pFollowupDate').value || null) : null;
+    if (novoStatus === 'followup' && !fuDate) { showToast('⚠️ Selecione a data do próximo contato.'); return; }
     const atualizado = {
       ...existente,
-      endereco:     end,
-      proprietario: document.getElementById('pProprietario').value.trim(),
-      valor:        document.getElementById('pValor').value.trim(),
-      tipo:         document.getElementById('pTipo').value,
-      link:         document.getElementById('pLink').value.trim(),
-      obs:          document.getElementById('pObs').value.trim(),
-      lat:          parseFloat(document.getElementById('pLat').value) || existente?.lat || null,
-      lng:          parseFloat(document.getElementById('pLng').value) || existente?.lng || null,
-      telefones:    JSON.stringify(_getTelefones()),
-      updated_at:   new Date().toISOString(),
+      endereco:      end,
+      proprietario:  document.getElementById('pProprietario').value.trim(),
+      valor:         document.getElementById('pValor').value.trim(),
+      tipo:          document.getElementById('pTipo').value,
+      link:          document.getElementById('pLink').value.trim(),
+      obs:           document.getElementById('pObs').value.trim(),
+      lat:           parseFloat(document.getElementById('pLat').value) || existente?.lat || null,
+      lng:           parseFloat(document.getElementById('pLng').value) || existente?.lng || null,
+      telefones:     JSON.stringify(_getTelefones()),
+      status:        novoStatus,
+      followup_date: fuDate,
+      updated_at:    new Date().toISOString(),
     };
     const { error } = await supa.from('captar_prospects').update(atualizado).eq('id', editId);
     if (error) { showToast('⚠️ Erro ao atualizar: ' + error.message); return; }
@@ -3197,8 +3223,11 @@ function editarProspect(id) {
   document.getElementById('pObs').value          = p.obs || '';
   document.getElementById('pLat').value          = p.lat || '';
   document.getElementById('pLng').value          = p.lng || '';
-  document.getElementById('geoStatus').textContent = p.lat ? '✅ Localização já cadastrada.' : '';
-  document.getElementById('geoStatus').style.color = '#16a34a';
+  document.getElementById('pStatus').value           = p.status || 'prospecto';
+  document.getElementById('pFollowupDate').value      = p.followup_date || '';
+  document.getElementById('pFollowupDateRow').style.display = (p.status === 'followup') ? 'block' : 'none';
+  document.getElementById('geoStatus').textContent    = p.lat ? '✅ Localização já cadastrada.' : '';
+  document.getElementById('geoStatus').style.color    = '#16a34a';
   document.getElementById('prospectModalTitle').textContent = 'Editar Imóvel';
   document.getElementById('btnSalvarProspect').textContent  = '💾 Atualizar Imóvel';
   try { _initTelefones(JSON.parse(p.telefones || '[]')); } catch(e) { _initTelefones([]); }
