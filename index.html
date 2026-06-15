@@ -769,7 +769,21 @@
   </div>
 </div>
 
-<!-- MODAL: Follow-up date picker -->
+<!-- MODAL: Follow-up date picker — Visitas -->
+<div id="visitFollowupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1200;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:calc(100% - 48px);max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+    <div style="font-size:17px;font-weight:700;color:#0a1628;margin-bottom:4px;">🔔 Follow-up</div>
+    <div style="font-size:13px;color:#6b7280;margin-bottom:16px;">Quando entrar em contato com este proprietário?</div>
+    <input type="hidden" id="visitFollowupId">
+    <input type="date" id="visitFollowupDate" style="width:100%;padding:11px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:15px;outline:none;box-sizing:border-box;margin-bottom:16px;">
+    <div style="display:flex;gap:10px;">
+      <button onclick="document.getElementById('visitFollowupModal').style.display='none';" style="flex:1;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;background:#fff;cursor:pointer;color:#374151;">Cancelar</button>
+      <button onclick="confirmarVisitFollowup()" style="flex:1;padding:12px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">✅ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Follow-up date picker — Captação -->
 <div id="followupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1200;align-items:center;justify-content:center;">
   <div style="background:#fff;border-radius:16px;padding:24px;width:calc(100% - 48px);max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
     <div style="font-size:17px;font-weight:700;color:#0a1628;margin-bottom:4px;">📅 Follow-up</div>
@@ -1227,12 +1241,16 @@
       </div>
       <div>
         <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">STATUS</label>
-        <select id="vEditStatus" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;-webkit-appearance:none;">
+        <select id="vEditStatus" onchange="toggleVEditFollowup()" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;-webkit-appearance:none;">
           <option value="pendente">⏳ Pendente</option>
           <option value="captado">✅ Captado</option>
           <option value="nao_captado">❌ Não Captado</option>
           <option value="follow_up">🔔 Follow-up</option>
         </select>
+      </div>
+      <div id="vEditFollowupRow" style="display:none;">
+        <label style="font-size:12px;font-weight:700;color:#d97706;display:block;margin-bottom:4px;">📅 DATA DO PRÓXIMO CONTATO</label>
+        <input type="date" id="vEditFollowupDate" style="width:100%;padding:10px;border:1.5px solid #fde68a;border-radius:8px;font-size:14px;outline:none;background:#fffbeb;box-sizing:border-box;">
       </div>
       <div>
         <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">OBSERVAÇÕES</label>
@@ -2106,8 +2124,62 @@ async function loadHistory() {
     listEl.innerHTML = _captacaoCompacto + `<div class="history-empty">❌ Erro: ${error.message}<br><small>Verifique se a tabela "visits" foi criada no Supabase.</small></div>`;
     return;
   }
+
+  // ── Seção de lembretes de follow-up (captação + visitas) ──
+  const _todayStr = new Date().toISOString().split('T')[0];
+  const _buildFollowupBanner = (prospectos, visitas) => {
+    const hoje = new Date(_todayStr + 'T00:00:00');
+    const todos = [
+      ...(prospectos || []).filter(p => p.status === 'followup' && p.followup_date).map(p => ({
+        nome: p.proprietario || 'Proprietário', data: p.followup_date, tipo: '🏠 Captação', id: p.id, origem: 'capt'
+      })),
+      ...(visitas || []).filter(v => v.status === 'follow_up' && v.followup_date).map(v => ({
+        nome: v.proprietario_nome || 'Proprietário', data: v.followup_date, tipo: '📋 Visita', id: v.id, origem: 'visit'
+      })),
+    ].sort((a, b) => a.data.localeCompare(b.data));
+    if (!todos.length) return '';
+    const vencidos  = todos.filter(f => f.data < _todayStr);
+    const hoje_itens = todos.filter(f => f.data === _todayStr);
+    const proximos  = todos.filter(f => f.data > _todayStr);
+    const itemHtml = (f, cor, icon) => {
+      const [y,m,d] = f.data.split('-');
+      const dtFmt = `${d}/${m}/${y}`;
+      const editFn = f.origem === 'capt' ? `editarProspect('${f.id}')` : `abrirEditarVisita('${f.id}')`;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.1);">
+        <div>
+          <div style="font-size:14px;font-weight:700;color:#fff;">${f.nome}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:1px;">${f.tipo} · ${dtFmt}</div>
+        </div>
+        <button onclick="${editFn}" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:7px;padding:5px 11px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;">✏️ Editar</button>
+      </div>`;
+    };
+    let html = `<div style="background:#0a1628;border-radius:14px;margin-bottom:16px;overflow:hidden;">
+      <div style="padding:12px 14px 8px;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:18px;">🔔</span>
+        <div>
+          <div style="font-size:13px;font-weight:800;color:#fff;letter-spacing:.3px;">LEMBRETES DE FOLLOW-UP</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.55);margin-top:1px;">${todos.length} contato${todos.length>1?'s':''} agendado${todos.length>1?'s':''}</div>
+        </div>
+      </div>`;
+    if (vencidos.length) {
+      html += `<div style="background:#7f1d1d;padding:6px 14px;font-size:10px;font-weight:800;color:#fca5a5;letter-spacing:.5px;text-transform:uppercase;">⚠️ VENCIDOS — Ligue agora!</div>`;
+      html += vencidos.map(f => itemHtml(f,'#dc2626','🔴')).join('');
+    }
+    if (hoje_itens.length) {
+      html += `<div style="background:#78350f;padding:6px 14px;font-size:10px;font-weight:800;color:#fde68a;letter-spacing:.5px;text-transform:uppercase;">📅 HOJE</div>`;
+      html += hoje_itens.map(f => itemHtml(f,'#d97706','🟡')).join('');
+    }
+    if (proximos.length) {
+      html += `<div style="background:#1e3a5f;padding:6px 14px;font-size:10px;font-weight:800;color:#93c5fd;letter-spacing:.5px;text-transform:uppercase;">📆 PRÓXIMOS</div>`;
+      html += proximos.map(f => itemHtml(f,'#3b82f6','🔵')).join('');
+    }
+    html += `</div>`;
+    return html;
+  };
+
   if (!data?.length) {
-    listEl.innerHTML = _captacaoCompacto || '<div class="history-empty">📭 Nenhuma visita registrada ainda.</div>';
+    const _reminderHtml = _buildFollowupBanner(_naoProspectos, []);
+    listEl.innerHTML = _reminderHtml + (_captacaoCompacto || '<div class="history-empty">📭 Nenhuma visita registrada ainda.</div>');
     return;
   }
 
@@ -2168,6 +2240,7 @@ async function loadHistory() {
           ${row('Tel. proprietário', vt.proprietario_telefone)}
           ${row('Endereço', vt.endereco)}
           ${row('Tipo', vt.tipo_imovel)}
+          ${(vt.status === 'follow_up' && vt.followup_date) ? `<div class="history-detail" style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:7px 10px;margin-bottom:6px;"><strong>📅 Follow-up:</strong> ${_formatarData(vt.followup_date)}</div>` : ''}
           ${row('Conservação', vt.questionario?.conservacao)}
           ${row('Dormitórios', vt.questionario?.dorms)}
           ${row('Suítes', vt.questionario?.suites)}
@@ -2194,7 +2267,8 @@ async function loadHistory() {
     </div>`;
   }).join('');
 
-  listEl.innerHTML = _captacaoCompacto + _visitsHtml;
+  const _reminderHtml = _buildFollowupBanner(_naoProspectos, data);
+  listEl.innerHTML = _reminderHtml + _captacaoCompacto + _visitsHtml;
 }
 
 // ─── PLANO DE MARKETING ───────────────────────────────────────────
@@ -2367,13 +2441,15 @@ async function abrirEditarVisita(vid) {
   if (!supa || !currentUser) return;
   const { data, error } = await supa.from('visits').select('*').eq('id', vid).single();
   if (error || !data) { showToast('⚠️ Não foi possível carregar os dados.'); return; }
-  document.getElementById('vEditId').value     = vid;
-  document.getElementById('vEditProp').value   = data.proprietario_nome || '';
-  document.getElementById('vEditTel').value    = data.proprietario_telefone || '';
-  document.getElementById('vEditEnd').value    = data.endereco || '';
-  document.getElementById('vEditValor').value  = data.valor_pedido || '';
-  document.getElementById('vEditObs').value    = data.observacoes || '';
-  document.getElementById('vEditStatus').value = data.status || 'pendente';
+  document.getElementById('vEditId').value          = vid;
+  document.getElementById('vEditProp').value        = data.proprietario_nome || '';
+  document.getElementById('vEditTel').value         = data.proprietario_telefone || '';
+  document.getElementById('vEditEnd').value         = data.endereco || '';
+  document.getElementById('vEditValor').value       = data.valor_pedido || '';
+  document.getElementById('vEditObs').value         = data.observacoes || '';
+  document.getElementById('vEditStatus').value      = data.status || 'pendente';
+  document.getElementById('vEditFollowupDate').value = data.followup_date || '';
+  document.getElementById('vEditFollowupRow').style.display = (data.status === 'follow_up') ? 'block' : 'none';
   // Tipo de imóvel: tenta match exato, senão fica vazio
   const tipoSel = document.getElementById('vEditTipo');
   const tipoOpt = [...tipoSel.options].find(o => o.value === data.tipo_imovel || o.text === data.tipo_imovel);
@@ -2384,13 +2460,17 @@ async function abrirEditarVisita(vid) {
 async function salvarVisitaEditada() {
   const vid = document.getElementById('vEditId').value;
   if (!vid || !supa || !currentUser) return;
+  const novoStatus = document.getElementById('vEditStatus').value;
+  const fuDate = (novoStatus === 'follow_up') ? (document.getElementById('vEditFollowupDate').value || null) : null;
+  if (novoStatus === 'follow_up' && !fuDate) { showToast('⚠️ Selecione a data do próximo contato.'); return; }
   const updates = {
     proprietario_nome:      document.getElementById('vEditProp').value.trim(),
     proprietario_telefone:  document.getElementById('vEditTel').value.trim(),
     endereco:               document.getElementById('vEditEnd').value.trim(),
     tipo_imovel:            document.getElementById('vEditTipo').value,
     valor_pedido:           document.getElementById('vEditValor').value.trim(),
-    status:                 document.getElementById('vEditStatus').value,
+    status:                 novoStatus,
+    followup_date:          fuDate,
     observacoes:            document.getElementById('vEditObs').value.trim(),
   };
   const { error } = await supa.from('visits').update(updates).eq('id', vid);
@@ -2401,8 +2481,29 @@ async function salvarVisitaEditada() {
 }
 
 async function setStatus(id, status) {
-  await supa.from('visits').update({ status }).eq('id', id);
+  if (status === 'follow_up') {
+    document.getElementById('visitFollowupId').value = id;
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('visitFollowupDate').value = today;
+    document.getElementById('visitFollowupModal').style.display = 'flex';
+    return;
+  }
+  await supa.from('visits').update({ status, followup_date: null }).eq('id', id);
   await loadHistory();
+}
+
+async function confirmarVisitFollowup() {
+  const id   = document.getElementById('visitFollowupId').value;
+  const date = document.getElementById('visitFollowupDate').value;
+  if (!date) { showToast('⚠️ Selecione uma data'); return; }
+  document.getElementById('visitFollowupModal').style.display = 'none';
+  await supa.from('visits').update({ status: 'follow_up', followup_date: date }).eq('id', id);
+  await loadHistory();
+}
+
+function toggleVEditFollowup() {
+  const show = document.getElementById('vEditStatus').value === 'follow_up';
+  document.getElementById('vEditFollowupRow').style.display = show ? 'block' : 'none';
 }
 
 async function saveObs(id) {
@@ -2658,36 +2759,41 @@ async function openCaptar() {
   const el = document.getElementById('captarScreen');
   el.style.display = 'flex';
 
+  // Força recálculo de layout síncrono — garante que o div do mapa tem dimensões reais
+  void el.offsetHeight;
+
   // Carrega prospectos do Supabase (atualiza cache)
   await loadCaptarProspects();
 
-  // Aguarda o browser pintar o elemento antes de inicializar o Leaflet
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
-    const bairroPrincipalId = corretor.bairroPrincipal || 'dores';
-    const bairroInfo = BAIRROS_SM.find(b => b.id === bairroPrincipalId) || BAIRROS_SM[0];
-    const centerLat = bairroInfo.lat;
-    const centerLng = bairroInfo.lng;
-    const subtEl = document.getElementById('captarSubtitulo');
-    if (subtEl) subtEl.textContent = bairroInfo.nome + ' · Santa Maria / RS';
+  // Aguarda o browser pintar (iOS precisa de um tick além do rAF)
+  await new Promise(r => setTimeout(r, 250));
 
-    if (!_captarMap) {
-      _captarMap = L.map('captarMap', { zoomControl: true }).setView([centerLat, centerLng], DORES_ZOOM);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
-        maxZoom: 19
-      }).addTo(_captarMap);
-      // Força recálculo de tamanho após primeira renderização
-      setTimeout(() => { if (_captarMap) _captarMap.invalidateSize(); }, 400);
-      const skipDoresFit = (bairroPrincipalId !== 'dores');
-      _carregarPoligonoDores(skipDoresFit);
-    } else {
-      _captarMap.setView([centerLat, centerLng], DORES_ZOOM);
-      _captarMap.invalidateSize();
-    }
-    _renderBairrosNoMapa();
-    renderCaptarProspects();
-  }));
+  const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
+  const bairroPrincipalId = corretor.bairroPrincipal || 'dores';
+  const bairroInfo = BAIRROS_SM.find(b => b.id === bairroPrincipalId) || BAIRROS_SM[0];
+  const centerLat = bairroInfo.lat;
+  const centerLng = bairroInfo.lng;
+  const subtEl = document.getElementById('captarSubtitulo');
+  if (subtEl) subtEl.textContent = bairroInfo.nome + ' · Santa Maria / RS';
+
+  if (!_captarMap) {
+    _captarMap = L.map('captarMap', { zoomControl: true }).setView([centerLat, centerLng], DORES_ZOOM);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+      maxZoom: 19
+    }).addTo(_captarMap);
+    // Múltiplos invalidateSize para garantir renderização em iOS
+    setTimeout(() => { if (_captarMap) _captarMap.invalidateSize(); }, 300);
+    setTimeout(() => { if (_captarMap) _captarMap.invalidateSize(); }, 700);
+    setTimeout(() => { if (_captarMap) _captarMap.invalidateSize(); }, 1400);
+    const skipDoresFit = (bairroPrincipalId !== 'dores');
+    _carregarPoligonoDores(skipDoresFit);
+  } else {
+    _captarMap.setView([centerLat, centerLng], DORES_ZOOM);
+    setTimeout(() => { if (_captarMap) _captarMap.invalidateSize(); }, 200);
+  }
+  _renderBairrosNoMapa();
+  renderCaptarProspects();
 }
 
 function closeCaptar() {
