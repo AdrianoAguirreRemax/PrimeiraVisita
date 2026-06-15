@@ -1931,83 +1931,7 @@ async function loadRelatorios() {
   const captados = data.filter(v => v.status === 'captado').length;
   const txCaptacao = total ? Math.round((captados/total)*100) : 0;
 
-  // ── Captação: seção completa no relatório ──
-  const _arquivo = (_prospectsCache || []).filter(p => p.status !== 'prospecto');
-  const _qtd = {
-    followup:   _arquivo.filter(p => p.status === 'followup').length,
-    captado:    _arquivo.filter(p => p.status === 'captado').length,
-    visitado:   _arquivo.filter(p => p.status === 'visitado').length,
-    descartado: _arquivo.filter(p => p.status === 'descartado').length,
-  };
-  const _hoje = new Date().toISOString().slice(0,10);
-  const _proxFU = _arquivo
-    .filter(p => p.status === 'followup' && p.followup_date)
-    .sort((a,b) => a.followup_date.localeCompare(b.followup_date))
-    .slice(0, 5);
-  const _scMap2 = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626' };
-  const _slMap2 = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado' };
-  const _borderMap = { visitado:'#bfdbfe', captado:'#bbf7d0', followup:'#fde68a', descartado:'#fecaca' };
-
-  const _captacaoSection = _arquivo.length ? `
-    <div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
-      <div style="font-size:13px;font-weight:800;color:#0a1628;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">🏠 Captação de Imóveis</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-        ${[
-          { icon:'📅', label:'Follow-up',  n:_qtd.followup,   cor:'#d97706', bg:'#fffbeb' },
-          { icon:'✅', label:'Captados',   n:_qtd.captado,    cor:'#16a34a', bg:'#f0fdf4' },
-          { icon:'👁️', label:'Visitados',  n:_qtd.visitado,   cor:'#2563eb', bg:'#eff6ff' },
-          { icon:'❌', label:'Descartados',n:_qtd.descartado, cor:'#dc2626', bg:'#fff1f2' },
-        ].map(s => `<div style="background:${s.bg};border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;">
-          <span style="font-size:20px;">${s.icon}</span>
-          <div><div style="font-size:24px;font-weight:800;color:${s.cor};line-height:1;">${s.n}</div><div style="font-size:11px;color:#6b7280;">${s.label}</div></div>
-        </div>`).join('')}
-      </div>
-      ${_proxFU.length ? `<div style="font-size:11px;font-weight:800;color:#92400e;margin-bottom:8px;">⏰ PRÓXIMOS FOLLOW-UPS</div>
-        ${_proxFU.map(p => {
-          let tel = '';
-          try { const t = JSON.parse(p.telefones||'[]'); if(t.length) tel = ' · 📞 ' + t[0]; } catch(e){}
-          const atrasado = p.followup_date < _hoje;
-          return `<div style="background:${atrasado?'#fff1f2':'#fffbeb'};border:1px solid ${atrasado?'#fecaca':'#fde68a'};border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:12px;color:${atrasado?'#dc2626':'#0a1628'};">${p.endereco}${tel}</span>
-            <span style="font-size:12px;font-weight:800;color:${atrasado?'#dc2626':'#d97706'};white-space:nowrap;margin-left:8px;">${_formatarData(p.followup_date)}${atrasado?' ⚠️':''}</span>
-          </div>`;
-        }).join('')}` : ''}
-      <div style="font-size:11px;font-weight:800;color:#6b7280;margin-bottom:8px;margin-top:10px;">TODOS OS REGISTROS</div>
-      ${_arquivo.map(p => {
-        const sc = _scMap2[p.status] || '#6b7280';
-        const sl = _slMap2[p.status] || p.status;
-        const bc = _borderMap[p.status] || '#e5e7eb';
-        let telesHtml = '';
-        try { const t = JSON.parse(p.telefones||'[]'); if(t.length) telesHtml = `<div style="font-size:11px;color:#374151;">📞 ${t.join(' · ')}</div>`; } catch(e){}
-        const fuBadge = (p.status === 'followup' && p.followup_date) ? `<div style="font-size:11px;color:#92400e;">📅 ${_formatarData(p.followup_date)}</div>` : '';
-        return `<div style="border-left:3px solid ${bc};background:#f9fafb;border-radius:8px;padding:10px 12px;margin-bottom:6px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:13px;font-weight:700;color:#0a1628;">${p.endereco}</div>
-              ${p.proprietario ? `<div style="font-size:11px;color:#6b7280;">👤 ${p.proprietario}</div>` : ''}
-              ${telesHtml}
-              ${p.valor ? `<div style="font-size:12px;font-weight:700;color:#cc0000;">${p.valor}</div>` : ''}
-              ${fuBadge}
-              ${p.obs ? `<div style="font-size:11px;color:#374151;margin-top:3px;">${p.obs}</div>` : ''}
-            </div>
-            <span style="background:${sc}20;color:${sc};border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;">${sl}</span>
-          </div>
-          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
-            <select onchange="alterarStatusProspect('${p.id}',this.value);loadRelatorios();" style="border:1px solid #e5e7eb;border-radius:6px;padding:3px 8px;font-size:11px;background:#fff;color:#374151;cursor:pointer;">
-              <option value="" disabled selected>Mover para…</option>
-              <option value="prospecto">🔍 → Prospecto</option>
-              <option value="visitado"   ${p.status==='visitado'?'selected':''}>👁️ Visitado</option>
-              <option value="captado"    ${p.status==='captado'?'selected':''}>✅ Captado</option>
-              <option value="followup"   ${p.status==='followup'?'selected':''}>📅 Follow-up</option>
-              <option value="descartado" ${p.status==='descartado'?'selected':''}>❌ Descartado</option>
-            </select>
-            ${p.link ? `<button onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');" style="background:#0a1628;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;">🔗 Anúncio</button>` : ''}
-          </div>
-        </div>`;
-      }).join('')}
-    </div>` : '';
-
-  el.innerHTML = _captacaoSection + `
+  el.innerHTML = `
     ${card('📊 Resumo Geral', `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div style="background:#f3f4f6;border-radius:10px;padding:12px;text-align:center;">
@@ -2066,25 +1990,48 @@ async function loadHistory() {
   // Mostra mais recente primeiro (reverso), mas numeração de 1 a N (mais antigo = #1)
   const dataDesc = [...data].reverse();
 
-  // ── Captação não-prospectos (linhas compactas) ──
+  // ── Captação não-prospectos — cards expandíveis (somente visualização) ──
   const _naoProspectos = (_prospectsCache || []).filter(p => p.status !== 'prospecto');
+  const _scMapC = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626' };
+  const _slMapC = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado' };
   const _captacaoCompacto = _naoProspectos.length ? (() => {
-    const _scMap = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626' };
-    const _slMap = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado' };
-    const linhas = _naoProspectos.map(p => {
-      let tel = '';
-      try { const t = JSON.parse(p.telefones||'[]'); if(t.length) tel = ' · 📞 ' + t[0]; } catch(e){}
-      const sc = _scMap[p.status] || '#6b7280';
-      const sl = _slMap[p.status] || p.status;
-      const fuDate = (p.status === 'followup' && p.followup_date) ? ' · ' + _formatarData(p.followup_date) : '';
-      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f3f4f6;">
-        <span style="background:${sc}20;color:${sc};border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;">${sl}</span>
-        <span style="font-size:12px;color:#0a1628;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.endereco}${tel}${fuDate}</span>
+    const cards = _naoProspectos.map(p => {
+      const sc = _scMapC[p.status] || '#6b7280';
+      const sl = _slMapC[p.status] || p.status;
+      let telsHtml = '';
+      let tels = [];
+      try { tels = JSON.parse(p.telefones||'[]'); } catch(e){}
+      if (tels.length) telsHtml = `<div class="history-detail"><strong>Telefone(s):</strong> ${tels.join(' · ')}</div>`;
+      const fuHtml = (p.status === 'followup' && p.followup_date)
+        ? `<div class="history-detail"><strong>Follow-up:</strong> ${_formatarData(p.followup_date)}</div>` : '';
+      return `
+      <div class="history-card" id="ccard-${p.id}">
+        <div class="history-card-header" onclick="toggleCCard('${p.id}')">
+          <div style="flex:1;min-width:0;">
+            <div class="history-prop">${p.proprietario || 'Proprietário não informado'}</div>
+            <div class="history-addr">${p.endereco || '—'}</div>
+            ${p.tipo ? `<div class="history-meta">${p.tipo}</div>` : ''}
+          </div>
+          <span class="status-badge" style="background:${sc}20;color:${sc};border:none;flex-shrink:0;">${sl}</span>
+        </div>
+        <div class="history-card-body" id="ccbody-${p.id}" style="display:none;">
+          <div style="margin-bottom:10px;">
+            ${p.valor ? `<div class="history-detail"><strong>Valor:</strong> ${p.valor}</div>` : ''}
+            ${telsHtml}
+            ${fuHtml}
+            ${p.link ? `<div class="history-detail"><strong>Anúncio:</strong> <a href="${p.link}" onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');return false;" style="color:#cc0000;">${p.link}</a></div>` : ''}
+            ${p.obs ? `<div class="history-detail"><strong>Obs:</strong> ${p.obs}</div>` : ''}
+          </div>
+          <div style="text-align:right;">
+            <button onclick="editarProspect('${p.id}');closeHistory();" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar imóvel</button>
+          </div>
+        </div>
       </div>`;
     }).join('');
-    return `<div style="margin-top:16px;border-top:2px solid #e5e7eb;padding-top:10px;">
-      <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;padding:4px 10px 8px;">🏠 Captação · ${_naoProspectos.length} imóvel(is)</div>
-      <div style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">${linhas}</div>
+    return `<div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;padding:12px 16px 6px;">🏠 Captação · ${_naoProspectos.length} imóvel(is)</div>
+      ${cards}
+      <div style="border-bottom:2px solid #e5e7eb;margin-bottom:16px;"></div>
     </div>`;
   })() : '';
 
@@ -2319,6 +2266,11 @@ async function loadMarketingAlerts() {
 function toggleCard(id) {
   const b = document.getElementById('hbody-' + id);
   b.style.display = b.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleCCard(id) {
+  const b = document.getElementById('ccbody-' + id);
+  if (b) b.style.display = b.style.display === 'none' ? 'block' : 'none';
 }
 
 async function setStatus(id, status) {
