@@ -640,7 +640,6 @@
       <div style="color:#fff;font-size:17px;font-weight:700;">🗺️ Captar Imóveis</div>
       <div id="captarSubtitulo" style="color:rgba(255,255,255,0.5);font-size:11px;">Santa Maria / RS</div>
     </div>
-    <button onclick="abrirArquivo()" title="Arquivo de Descartados" style="background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.25);color:#fff;border-radius:8px;padding:8px 10px;font-size:14px;cursor:pointer;margin-right:4px;">📁</button>
     <button onclick="abrirFormProspect()" style="background:#cc0000;border:none;color:#fff;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;">+ Adicionar</button>
   </div>
 
@@ -771,38 +770,6 @@
 </div>
 
 <!-- TELA: Arquivo de imóveis -->
-<div id="arquivoScreen" style="display:none;position:fixed;inset:0;z-index:600;background:#f3f4f6;flex-direction:column;overflow:hidden;">
-
-  <!-- Header -->
-  <div style="background:#0a1628;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-    <button onclick="fecharArquivo()" style="background:rgba(255,255,255,0.12);border:none;color:#fff;border-radius:8px;padding:8px 12px;font-size:14px;cursor:pointer;">← Voltar</button>
-    <div style="flex:1;">
-      <div style="color:#fff;font-size:17px;font-weight:700;">📁 Arquivo</div>
-      <div style="color:rgba(255,255,255,0.5);font-size:11px;">Visitados · Captados · Follow-up · Descartados</div>
-    </div>
-  </div>
-
-  <!-- Conteúdo scrollável -->
-  <div style="flex:1;overflow-y:auto;">
-
-    <!-- Dashboard de contadores -->
-    <div style="padding:14px 14px 0;">
-      <div id="arquivoDashboard" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"></div>
-    </div>
-
-    <!-- 5 próximos follow-ups -->
-    <div id="arquivoFollowupSection" style="padding:0 14px 0;"></div>
-
-    <!-- Busca + lista -->
-    <div style="padding:0 14px 14px;">
-      <input id="arquivoBusca" type="text" placeholder="Buscar por endereço ou proprietário..." oninput="filtrarArquivo()"
-        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:13px;outline:none;box-sizing:border-box;background:#fff;margin-bottom:12px;">
-      <div id="arquivoLista"></div>
-    </div>
-
-  </div>
-</div>
-
 <!-- HEADER -->
 <div class="header">
   <div class="header-logos">
@@ -1964,7 +1931,83 @@ async function loadRelatorios() {
   const captados = data.filter(v => v.status === 'captado').length;
   const txCaptacao = total ? Math.round((captados/total)*100) : 0;
 
-  el.innerHTML = `
+  // ── Captação: seção completa no relatório ──
+  const _arquivo = (_prospectsCache || []).filter(p => p.status !== 'prospecto');
+  const _qtd = {
+    followup:   _arquivo.filter(p => p.status === 'followup').length,
+    captado:    _arquivo.filter(p => p.status === 'captado').length,
+    visitado:   _arquivo.filter(p => p.status === 'visitado').length,
+    descartado: _arquivo.filter(p => p.status === 'descartado').length,
+  };
+  const _hoje = new Date().toISOString().slice(0,10);
+  const _proxFU = _arquivo
+    .filter(p => p.status === 'followup' && p.followup_date)
+    .sort((a,b) => a.followup_date.localeCompare(b.followup_date))
+    .slice(0, 5);
+  const _scMap2 = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626' };
+  const _slMap2 = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado' };
+  const _borderMap = { visitado:'#bfdbfe', captado:'#bbf7d0', followup:'#fde68a', descartado:'#fecaca' };
+
+  const _captacaoSection = _arquivo.length ? `
+    <div style="background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.06);">
+      <div style="font-size:13px;font-weight:800;color:#0a1628;margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px;">🏠 Captação de Imóveis</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+        ${[
+          { icon:'📅', label:'Follow-up',  n:_qtd.followup,   cor:'#d97706', bg:'#fffbeb' },
+          { icon:'✅', label:'Captados',   n:_qtd.captado,    cor:'#16a34a', bg:'#f0fdf4' },
+          { icon:'👁️', label:'Visitados',  n:_qtd.visitado,   cor:'#2563eb', bg:'#eff6ff' },
+          { icon:'❌', label:'Descartados',n:_qtd.descartado, cor:'#dc2626', bg:'#fff1f2' },
+        ].map(s => `<div style="background:${s.bg};border-radius:10px;padding:10px;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:20px;">${s.icon}</span>
+          <div><div style="font-size:24px;font-weight:800;color:${s.cor};line-height:1;">${s.n}</div><div style="font-size:11px;color:#6b7280;">${s.label}</div></div>
+        </div>`).join('')}
+      </div>
+      ${_proxFU.length ? `<div style="font-size:11px;font-weight:800;color:#92400e;margin-bottom:8px;">⏰ PRÓXIMOS FOLLOW-UPS</div>
+        ${_proxFU.map(p => {
+          let tel = '';
+          try { const t = JSON.parse(p.telefones||'[]'); if(t.length) tel = ' · 📞 ' + t[0]; } catch(e){}
+          const atrasado = p.followup_date < _hoje;
+          return `<div style="background:${atrasado?'#fff1f2':'#fffbeb'};border:1px solid ${atrasado?'#fecaca':'#fde68a'};border-radius:8px;padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:${atrasado?'#dc2626':'#0a1628'};">${p.endereco}${tel}</span>
+            <span style="font-size:12px;font-weight:800;color:${atrasado?'#dc2626':'#d97706'};white-space:nowrap;margin-left:8px;">${_formatarData(p.followup_date)}${atrasado?' ⚠️':''}</span>
+          </div>`;
+        }).join('')}` : ''}
+      <div style="font-size:11px;font-weight:800;color:#6b7280;margin-bottom:8px;margin-top:10px;">TODOS OS REGISTROS</div>
+      ${_arquivo.map(p => {
+        const sc = _scMap2[p.status] || '#6b7280';
+        const sl = _slMap2[p.status] || p.status;
+        const bc = _borderMap[p.status] || '#e5e7eb';
+        let telesHtml = '';
+        try { const t = JSON.parse(p.telefones||'[]'); if(t.length) telesHtml = `<div style="font-size:11px;color:#374151;">📞 ${t.join(' · ')}</div>`; } catch(e){}
+        const fuBadge = (p.status === 'followup' && p.followup_date) ? `<div style="font-size:11px;color:#92400e;">📅 ${_formatarData(p.followup_date)}</div>` : '';
+        return `<div style="border-left:3px solid ${bc};background:#f9fafb;border-radius:8px;padding:10px 12px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:#0a1628;">${p.endereco}</div>
+              ${p.proprietario ? `<div style="font-size:11px;color:#6b7280;">👤 ${p.proprietario}</div>` : ''}
+              ${telesHtml}
+              ${p.valor ? `<div style="font-size:12px;font-weight:700;color:#cc0000;">${p.valor}</div>` : ''}
+              ${fuBadge}
+              ${p.obs ? `<div style="font-size:11px;color:#374151;margin-top:3px;">${p.obs}</div>` : ''}
+            </div>
+            <span style="background:${sc}20;color:${sc};border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;">${sl}</span>
+          </div>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;">
+            <select onchange="alterarStatusProspect('${p.id}',this.value);loadRelatorios();" style="border:1px solid #e5e7eb;border-radius:6px;padding:3px 8px;font-size:11px;background:#fff;color:#374151;cursor:pointer;">
+              <option value="" disabled selected>Mover para…</option>
+              <option value="prospecto">🔍 → Prospecto</option>
+              <option value="visitado"   ${p.status==='visitado'?'selected':''}>👁️ Visitado</option>
+              <option value="captado"    ${p.status==='captado'?'selected':''}>✅ Captado</option>
+              <option value="followup"   ${p.status==='followup'?'selected':''}>📅 Follow-up</option>
+              <option value="descartado" ${p.status==='descartado'?'selected':''}>❌ Descartado</option>
+            </select>
+            ${p.link ? `<button onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');" style="background:#0a1628;color:#fff;border:none;border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;">🔗 Anúncio</button>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
+
+  el.innerHTML = _captacaoSection + `
     ${card('📊 Resumo Geral', `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div style="background:#f3f4f6;border-radius:10px;padding:12px;text-align:center;">
@@ -2023,7 +2066,29 @@ async function loadHistory() {
   // Mostra mais recente primeiro (reverso), mas numeração de 1 a N (mais antigo = #1)
   const dataDesc = [...data].reverse();
 
-  listEl.innerHTML = dataDesc.map((vt, idx) => {
+  // ── Captação não-prospectos (linhas compactas) ──
+  const _naoProspectos = (_prospectsCache || []).filter(p => p.status !== 'prospecto');
+  const _captacaoCompacto = _naoProspectos.length ? (() => {
+    const _scMap = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626' };
+    const _slMap = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado' };
+    const linhas = _naoProspectos.map(p => {
+      let tel = '';
+      try { const t = JSON.parse(p.telefones||'[]'); if(t.length) tel = ' · 📞 ' + t[0]; } catch(e){}
+      const sc = _scMap[p.status] || '#6b7280';
+      const sl = _slMap[p.status] || p.status;
+      const fuDate = (p.status === 'followup' && p.followup_date) ? ' · ' + _formatarData(p.followup_date) : '';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-bottom:1px solid #f3f4f6;">
+        <span style="background:${sc}20;color:${sc};border-radius:5px;padding:1px 7px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;">${sl}</span>
+        <span style="font-size:12px;color:#0a1628;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.endereco}${tel}${fuDate}</span>
+      </div>`;
+    }).join('');
+    return `<div style="margin-top:16px;border-top:2px solid #e5e7eb;padding-top:10px;">
+      <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;padding:4px 10px 8px;">🏠 Captação · ${_naoProspectos.length} imóvel(is)</div>
+      <div style="background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);">${linhas}</div>
+    </div>`;
+  })() : '';
+
+  const _visitsHtml = dataDesc.map((vt, idx) => {
     const visitNum = total - idx; // #total (mais recente) → #1 (mais antigo)
     const sc = statusClass[vt.status] || 'status-pendente';
     const sl = statusLabel[vt.status] || '⏳ Pendente';
@@ -2096,6 +2161,8 @@ async function loadHistory() {
       </div>
     </div>`;
   }).join('');
+
+  listEl.innerHTML = _captacaoCompacto + _visitsHtml;
 }
 
 // ─── PLANO DE MARKETING ───────────────────────────────────────────
@@ -3276,187 +3343,12 @@ function _formatarData(dateStr) {
   return `${d}/${m}/${y}`;
 }
 
-// ─── ARQUIVO DE DESCARTADOS ───────────────────────────────────────────────
-
-function abrirArquivo() {
-  document.getElementById('arquivoBusca').value = '';
-  document.getElementById('captarScreen').style.display = 'none';
-  const el = document.getElementById('arquivoScreen');
-  el.style.display = 'flex';
-  _renderArquivo('');
-}
-
-function fecharArquivo() {
-  document.getElementById('arquivoScreen').style.display = 'none';
-  document.getElementById('captarScreen').style.display = 'flex';
-}
-
-function filtrarArquivo() {
-  const filtro = document.getElementById('arquivoBusca').value.toLowerCase();
-  _renderArquivo(filtro);
-}
-
-function _renderArquivo(filtro) {
-  // Arquivo = todos os não-prospectos
-  const arquivo = _prospectsCache.filter(p => p.status !== 'prospecto');
-
-  // ── Dashboard ──
-  const qtd = {
-    followup:   arquivo.filter(p => p.status === 'followup').length,
-    captado:    arquivo.filter(p => p.status === 'captado').length,
-    visitado:   arquivo.filter(p => p.status === 'visitado').length,
-    descartado: arquivo.filter(p => p.status === 'descartado').length,
-  };
-  const dashEl = document.getElementById('arquivoDashboard');
-  if (dashEl) {
-    dashEl.innerHTML = [
-      { icon:'📅', label:'Follow-up',  n:qtd.followup,   cor:'#d97706', bg:'#fffbeb', bd:'#fde68a' },
-      { icon:'✅', label:'Captados',   n:qtd.captado,    cor:'#16a34a', bg:'#f0fdf4', bd:'#bbf7d0' },
-      { icon:'👁️', label:'Visitados',  n:qtd.visitado,   cor:'#2563eb', bg:'#eff6ff', bd:'#bfdbfe' },
-      { icon:'❌', label:'Descartados',n:qtd.descartado, cor:'#dc2626', bg:'#fff1f2', bd:'#fecaca' },
-    ].map(s => `
-      <div style="background:${s.bg};border:1px solid ${s.bd};border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;">
-        <span style="font-size:26px;line-height:1;">${s.icon}</span>
-        <div>
-          <div style="font-size:32px;font-weight:800;color:${s.cor};line-height:1;">${s.n}</div>
-          <div style="font-size:12px;color:#6b7280;margin-top:2px;">${s.label}</div>
-        </div>
-      </div>`).join('');
-  }
-
-  // ── 5 próximos follow-ups ──
-  const hoje = new Date().toISOString().slice(0,10);
-  const proxFU = arquivo
-    .filter(p => p.status === 'followup' && p.followup_date)
-    .sort((a,b) => a.followup_date.localeCompare(b.followup_date))
-    .slice(0, 5);
-  const fuEl = document.getElementById('arquivoFollowupSection');
-  if (fuEl) {
-    if (proxFU.length) {
-      fuEl.innerHTML = `
-        <div style="background:#fff;border-radius:14px;padding:14px;margin-bottom:14px;box-shadow:0 1px 6px rgba(0,0,0,0.07);">
-          <div style="font-size:12px;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px;">
-            ⏰ Próximos Follow-ups
-          </div>
-          ${proxFU.map((p, idx) => {
-            let tel = '';
-            try { const t = JSON.parse(p.telefones||'[]'); if(t.length) tel = t[0]; } catch(e){}
-            const atrasado = p.followup_date < hoje;
-            const cor = atrasado ? '#dc2626' : '#0a1628';
-            const dataCor = atrasado ? '#dc2626' : '#d97706';
-            const bg = atrasado ? '#fff1f2' : (idx === 0 ? '#fffbeb' : '#fff');
-            const bd = atrasado ? '1px solid #fecaca' : (idx === 0 ? '1px solid #fde68a' : '1px solid #f3f4f6');
-            return `
-            <div style="background:${bg};border:${bd};border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:13px;font-weight:700;color:${cor};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.endereco}</div>
-                ${p.proprietario ? `<div style="font-size:11px;color:#6b7280;">👤 ${p.proprietario}</div>` : ''}
-                ${tel ? `<div style="font-size:11px;color:#374151;">📞 ${tel}</div>` : ''}
-              </div>
-              <div style="text-align:right;flex-shrink:0;">
-                <div style="font-size:15px;font-weight:800;color:${dataCor};">${_formatarData(p.followup_date)}</div>
-                ${atrasado ? '<div style="font-size:9px;color:#dc2626;font-weight:800;letter-spacing:.5px;">ATRASADO</div>' : ''}
-              </div>
-            </div>`;
-          }).join('')}
-        </div>`;
-    } else {
-      fuEl.innerHTML = '';
-    }
-  }
-
-  // ── Lista filtrada ──
-  const filtered = filtro
-    ? arquivo.filter(p => (p.endereco + ' ' + (p.proprietario||'')).toLowerCase().includes(filtro))
-    : arquivo;
-
-  const el = document.getElementById('arquivoLista');
-  if (!arquivo.length) {
-    el.innerHTML = `<div style="text-align:center;color:#9ca3af;padding:32px;font-size:14px;">Arquivo vazio.<br><span style="font-size:12px;">Aqui ficam visitados, captados, follow-ups e descartados.</span></div>`;
-    return;
-  }
-
-  const statusCor   = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626' };
-  const statusLabel = { visitado:'Visitado', captado:'Captado', followup:'Follow-up', descartado:'Descartado' };
-  const statusIcon  = { visitado:'👁️', captado:'✅', followup:'📅', descartado:'❌' };
-  const borderCol   = { visitado:'#bfdbfe', captado:'#bbf7d0', followup:'#fde68a', descartado:'#fecaca' };
-
-  const arquivoCard = p => {
-    const sc = statusCor[p.status]   || '#6b7280';
-    const sl = statusLabel[p.status] || p.status;
-    const si = statusIcon[p.status]  || '📁';
-    const bc = borderCol[p.status]   || '#e5e7eb';
-    let telesHtml = '';
-    try {
-      const tels = JSON.parse(p.telefones || '[]');
-      if (tels.length) telesHtml = `<div style="font-size:12px;color:#374151;margin-top:2px;">📞 ${tels.join(' · ')}</div>`;
-    } catch(e) {}
-    const fuBadge = (p.status === 'followup' && p.followup_date)
-      ? `<div style="font-size:11px;color:#92400e;margin-top:2px;">📅 Próx: ${_formatarData(p.followup_date)}</div>` : '';
-    return `
-    <div style="background:#fff;border-radius:12px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.06);border-left:3px solid ${bc};">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:700;color:#0a1628;">${p.endereco}</div>
-          ${p.proprietario ? `<div style="font-size:12px;color:#6b7280;margin-top:1px;">👤 ${p.proprietario}</div>` : ''}
-          ${telesHtml}
-          ${p.valor ? `<div style="font-size:12px;font-weight:700;color:#cc0000;">${p.valor}</div>` : ''}
-          ${fuBadge}
-        </div>
-        <span style="background:${sc}20;color:${sc};border-radius:6px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0;">${si} ${sl}</span>
-      </div>
-      ${p.obs ? `<div style="font-size:11px;color:#374151;background:#f9fafb;border-radius:6px;padding:5px 8px;margin-bottom:6px;">${p.obs}</div>` : ''}
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <select onchange="alterarStatusArquivo('${p.id}',this.value)" style="border:1px solid #e5e7eb;border-radius:8px;padding:4px 8px;font-size:11px;background:#fff;cursor:pointer;color:#374151;">
-          <option value="" disabled selected>Mover para…</option>
-          <option value="prospecto">🔍 → Prospecto</option>
-          <option value="visitado"   ${p.status==='visitado'?'selected':''}>👁️ Visitado</option>
-          <option value="captado"    ${p.status==='captado'?'selected':''}>✅ Captado</option>
-          <option value="followup"   ${p.status==='followup'?'selected':''}>📅 Follow-up</option>
-          <option value="descartado" ${p.status==='descartado'?'selected':''}>❌ Descartado</option>
-        </select>
-        ${p.link ? `<button onclick="abrirPortal('${p.link.replace(/'/g,"\\'")}');" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;">🔗 Anúncio</button>` : ''}
-        <button onclick="editarProspect('${p.id}');fecharArquivo();" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;">✏️ Editar</button>
-      </div>
-    </div>`;
-  };
-
-  if (!filtered.length) {
-    el.innerHTML = `<div style="text-align:center;color:#9ca3af;padding:20px;font-size:13px;">Nenhum resultado para "${filtro}".</div>`;
-    return;
-  }
-  el.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
-      ${filtro ? filtered.length + ' resultado(s)' : 'Todos os registros · ' + arquivo.length}
-    </div>
-    ${filtered.map(arquivoCard).join('')}`;
-}
-
-async function alterarStatusArquivo(id, novoStatus) {
-  if (!novoStatus) return;
-  if (novoStatus === 'followup') {
-    fecharArquivo();
-    await alterarStatusProspect(id, 'followup'); // vai abrir modal de data
-    return;
-  }
-  await alterarStatusProspect(id, novoStatus);
-  _renderArquivo(document.getElementById('arquivoBusca').value.toLowerCase());
-  renderCaptarProspects();
-}
-
-async function reativarProspect(id) {
-  await alterarStatusProspect(id, 'prospecto');
-  fecharArquivo();
-  showToast('✅ Imóvel reativado como Prospecto');
-}
-
 // ─── RENDER PROSPECTS ──────────────────────────────────────────────────────
 
 function renderCaptarProspects() {
   const listaCompleta = _prospectsCache;
-  // Lista principal: APENAS prospectos. Todo o resto vai para o arquivo.
+  // Lista principal: APENAS prospectos. Não-prospectos ficam no Histórico de Visitas.
   const lista = listaCompleta.filter(p => p.status === 'prospecto');
-  const arquivoQtd = listaCompleta.filter(p => p.status !== 'prospecto').length;
   const listEl = document.getElementById('captarList');
 
   // Limpa markers — só prospectos aparecem no mapa
@@ -3466,7 +3358,6 @@ function renderCaptarProspects() {
   if (!lista.length) {
     listEl.innerHTML = `<div style="text-align:center;color:#9ca3af;padding:24px;font-size:14px;">
       Nenhum imóvel prospectado.<br>Toque em <strong>+ Adicionar</strong> para incluir.
-      ${arquivoQtd ? `<div style="margin-top:12px;"><button onclick="abrirArquivo()" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer;">📁 Abrir Arquivo (${arquivoQtd})</button></div>` : ''}
     </div>`;
     return;
   }
@@ -3543,9 +3434,8 @@ function renderCaptarProspects() {
   };
 
   listEl.innerHTML = `
-    <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
-      <span>🔍 ${lista.length} prospecto(s)</span>
-      ${arquivoQtd ? `<button onclick="abrirArquivo()" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;">📁 Arquivo <span style="background:#cc0000;color:#fff;border-radius:8px;padding:0 5px;font-size:10px;">${arquivoQtd}</span></button>` : ''}
+    <div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">
+      🔍 ${lista.length} prospecto(s)
     </div>
     ${lista.map(cardHtml).join('')}
   `;
