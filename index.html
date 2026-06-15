@@ -1186,6 +1186,66 @@
   </div>
 </div>
 
+<!-- ══ MODAL: Editar Visita ══ -->
+<div id="visitEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1100;align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding-bottom:max(20px,env(safe-area-inset-bottom));">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="font-size:16px;font-weight:700;color:#0a1628;">✏️ Editar Visita</h3>
+      <button onclick="document.getElementById('visitEditModal').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9ca3af;line-height:1;">✕</button>
+    </div>
+    <input type="hidden" id="vEditId">
+    <div style="display:grid;gap:12px;">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">PROPRIETÁRIO</label>
+        <input type="text" id="vEditProp" placeholder="Nome do proprietário" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">TELEFONE DO PROPRIETÁRIO</label>
+        <input type="tel" id="vEditTel" placeholder="(55) 99999-9999" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">ENDEREÇO</label>
+        <input type="text" id="vEditEnd" placeholder="Rua, número, bairro" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">TIPO DE IMÓVEL</label>
+          <select id="vEditTipo" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;-webkit-appearance:none;">
+            <option value="">Selecione</option>
+            <option value="Casa">Casa</option>
+            <option value="Apartamento">Apartamento</option>
+            <option value="Terreno">Terreno</option>
+            <option value="Comercial">Comercial</option>
+            <option value="Rural">Rural</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">VALOR PEDIDO</label>
+          <input type="text" id="vEditValor" placeholder="R$ 0,00" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">STATUS</label>
+        <select id="vEditStatus" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;-webkit-appearance:none;">
+          <option value="pendente">⏳ Pendente</option>
+          <option value="captado">✅ Captado</option>
+          <option value="nao_captado">❌ Não Captado</option>
+          <option value="follow_up">🔔 Follow-up</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">OBSERVAÇÕES</label>
+        <textarea id="vEditObs" rows="3" placeholder="Anotações, follow-up..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button onclick="document.getElementById('visitEditModal').style.display='none'" style="flex:1;padding:12px;background:#f3f4f6;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;color:#374151;">Cancelar</button>
+      <button onclick="salvarVisitaEditada()" style="flex:2;padding:12px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">💾 Salvar Alterações</button>
+    </div>
+  </div>
+</div>
+
 <script>
 
 // ═══ SUPABASE ═══
@@ -1994,23 +2054,7 @@ async function loadHistory() {
   if (_prospectsCache.length === 0 && currentUser) {
     await loadCaptarProspects();
   }
-  // Busca em ordem crescente para calcular número correto
-  const { data, error } = await supa.from('visits').select('*').order('created_at', { ascending: true });
-  if (error) {
-    listEl.innerHTML = `<div class="history-empty">❌ Erro: ${error.message}<br><small>Verifique se a tabela "visits" foi criada no Supabase.</small></div>`;
-    return;
-  }
-  if (!data?.length) { listEl.innerHTML = '<div class="history-empty">📭 Nenhuma visita registrada ainda.</div>'; return; }
-
-  const total = data.length;
-  const statusClass = { pendente:'status-pendente', captado:'status-captado', nao_captado:'status-nao-captado', follow_up:'status-followup' };
-  const statusLabel = { pendente:'⏳ Pendente', captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'🔔 Follow-up' };
-  const row = (label, val) => val ? `<div class="history-detail"><strong>${label}:</strong> ${val}</div>` : '';
-
-  // Mostra mais recente primeiro (reverso), mas numeração de 1 a N (mais antigo = #1)
-  const dataDesc = [...data].reverse();
-
-  // ── Captação não-prospectos — cards expandíveis (somente visualização) ──
+  // ── Captação não-prospectos — cards expandíveis (calculado ANTES do early-return de visitas) ──
   const _naoProspectos = (_prospectsCache || []).filter(p => p.status !== 'prospecto');
   const _scMapC = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626' };
   const _slMapC = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado' };
@@ -2026,13 +2070,14 @@ async function loadHistory() {
         ? `<div class="history-detail"><strong>Follow-up:</strong> ${_formatarData(p.followup_date)}</div>` : '';
       return `
       <div class="history-card" id="ccard-${p.id}">
-        <div class="history-card-header" onclick="toggleCCard('${p.id}')">
+        <div class="history-card-header" onclick="toggleCCard('${p.id}')" style="position:relative;">
           <div style="flex:1;min-width:0;">
             <div class="history-prop">${p.proprietario || 'Proprietário não informado'}</div>
             <div class="history-addr">${p.endereco || '—'}</div>
             ${p.tipo ? `<div class="history-meta">${p.tipo}</div>` : ''}
           </div>
           <span class="status-badge" style="background:${sc}20;color:${sc};border:none;flex-shrink:0;">${sl}</span>
+          <span id="ccarrow-${p.id}" style="color:#9ca3af;font-size:11px;margin-left:6px;transition:transform .2s;display:inline-block;flex-shrink:0;">▼</span>
         </div>
         <div class="history-card-body" id="ccbody-${p.id}" style="display:none;">
           <div style="margin-bottom:10px;">
@@ -2054,6 +2099,25 @@ async function loadHistory() {
       <div style="border-bottom:2px solid #e5e7eb;margin-bottom:16px;"></div>
     </div>`;
   })() : '';
+
+  // Busca em ordem crescente para calcular número correto
+  const { data, error } = await supa.from('visits').select('*').order('created_at', { ascending: true });
+  if (error) {
+    listEl.innerHTML = _captacaoCompacto + `<div class="history-empty">❌ Erro: ${error.message}<br><small>Verifique se a tabela "visits" foi criada no Supabase.</small></div>`;
+    return;
+  }
+  if (!data?.length) {
+    listEl.innerHTML = _captacaoCompacto || '<div class="history-empty">📭 Nenhuma visita registrada ainda.</div>';
+    return;
+  }
+
+  const total = data.length;
+  const statusClass = { pendente:'status-pendente', captado:'status-captado', nao_captado:'status-nao-captado', follow_up:'status-followup' };
+  const statusLabel = { pendente:'⏳ Pendente', captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'🔔 Follow-up' };
+  const row = (label, val) => val ? `<div class="history-detail"><strong>${label}:</strong> ${val}</div>` : '';
+
+  // Mostra mais recente primeiro (reverso), mas numeração de 1 a N (mais antigo = #1)
+  const dataDesc = [...data].reverse();
 
   const _visitsHtml = dataDesc.map((vt, idx) => {
     const visitNum = total - idx; // #total (mais recente) → #1 (mais antigo)
@@ -2090,8 +2154,9 @@ async function loadHistory() {
           <button class="sbtn sbtn-followup" onclick="setStatus('${vid}','follow_up')">🔔 Follow-up</button>
           <button class="sbtn sbtn-pendente" onclick="setStatus('${vid}','pendente')">⏳ Pendente</button>
         </div>
-        <div style="margin-top:8px;text-align:right;">
-          <button onclick="confirmarExclusao('${vid}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:6px 14px;font-size:12px;cursor:pointer;">🗑️ Excluir visita</button>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+          <button onclick="abrirEditarVisita('${vid}')" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar visita</button>
+          <button onclick="confirmarExclusao('${vid}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;">🗑️ Excluir</button>
         </div>
 
         <div style="margin:12px 0;border-top:1px solid #f3f4f6;padding-top:12px;">
@@ -2290,7 +2355,49 @@ function toggleCard(id) {
 
 function toggleCCard(id) {
   const b = document.getElementById('ccbody-' + id);
-  if (b) b.style.display = b.style.display === 'none' ? 'block' : 'none';
+  const arrow = document.getElementById('ccarrow-' + id);
+  if (b) {
+    const opening = b.style.display === 'none';
+    b.style.display = opening ? 'block' : 'none';
+    if (arrow) arrow.style.transform = opening ? 'rotate(180deg)' : '';
+  }
+}
+
+async function abrirEditarVisita(vid) {
+  if (!supa || !currentUser) return;
+  const { data, error } = await supa.from('visits').select('*').eq('id', vid).single();
+  if (error || !data) { showToast('⚠️ Não foi possível carregar os dados.'); return; }
+  document.getElementById('vEditId').value     = vid;
+  document.getElementById('vEditProp').value   = data.proprietario_nome || '';
+  document.getElementById('vEditTel').value    = data.proprietario_telefone || '';
+  document.getElementById('vEditEnd').value    = data.endereco || '';
+  document.getElementById('vEditValor').value  = data.valor_pedido || '';
+  document.getElementById('vEditObs').value    = data.observacoes || '';
+  document.getElementById('vEditStatus').value = data.status || 'pendente';
+  // Tipo de imóvel: tenta match exato, senão fica vazio
+  const tipoSel = document.getElementById('vEditTipo');
+  const tipoOpt = [...tipoSel.options].find(o => o.value === data.tipo_imovel || o.text === data.tipo_imovel);
+  tipoSel.value = tipoOpt ? tipoOpt.value : (data.tipo_imovel || '');
+  document.getElementById('visitEditModal').style.display = 'flex';
+}
+
+async function salvarVisitaEditada() {
+  const vid = document.getElementById('vEditId').value;
+  if (!vid || !supa || !currentUser) return;
+  const updates = {
+    proprietario_nome:      document.getElementById('vEditProp').value.trim(),
+    proprietario_telefone:  document.getElementById('vEditTel').value.trim(),
+    endereco:               document.getElementById('vEditEnd').value.trim(),
+    tipo_imovel:            document.getElementById('vEditTipo').value,
+    valor_pedido:           document.getElementById('vEditValor').value.trim(),
+    status:                 document.getElementById('vEditStatus').value,
+    observacoes:            document.getElementById('vEditObs').value.trim(),
+  };
+  const { error } = await supa.from('visits').update(updates).eq('id', vid);
+  if (error) { showToast('⚠️ Erro ao salvar: ' + error.message); return; }
+  document.getElementById('visitEditModal').style.display = 'none';
+  showToast('✅ Visita atualizada!');
+  loadHistory();
 }
 
 async function setStatus(id, status) {
