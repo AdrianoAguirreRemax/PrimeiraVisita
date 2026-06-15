@@ -1234,6 +1234,8 @@ function afterLogin() {
   updateOfflineBadge();
   syncPendingVisits();
   showHomeScreen();
+  // Precarrega captação em background para o Histórico não aparecer vazio
+  loadCaptarProspects().catch(() => {});
 }
 
 async function doLogout() {
@@ -1988,6 +1990,10 @@ async function loadHistory() {
   if (!supa) { return; }
   const listEl = document.getElementById('historyList');
   listEl.innerHTML = '<div class="history-loading">⏳ Carregando visitas...</div>';
+  // Garante que captação esteja carregada antes de renderizar os cards
+  if (_prospectsCache.length === 0 && currentUser) {
+    await loadCaptarProspects();
+  }
   // Busca em ordem crescente para calcular número correto
   const { data, error } = await supa.from('visits').select('*').order('created_at', { ascending: true });
   if (error) {
@@ -2037,7 +2043,7 @@ async function loadHistory() {
             ${p.obs ? `<div class="history-detail"><strong>Obs:</strong> ${p.obs}</div>` : ''}
           </div>
           <div style="text-align:right;">
-            <button onclick="editarProspect('${p.id}');closeHistory();" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar imóvel</button>
+            <button onclick="editarProspect('${p.id}')" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar imóvel</button>
           </div>
         </div>
       </div>`;
@@ -2548,7 +2554,8 @@ async function openCaptar() {
   // Carrega prospectos do Supabase (atualiza cache)
   await loadCaptarProspects();
 
-  setTimeout(() => {
+  // Aguarda o browser pintar o elemento antes de inicializar o Leaflet
+  requestAnimationFrame(() => requestAnimationFrame(() => {
     const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
     const bairroPrincipalId = corretor.bairroPrincipal || 'dores';
     const bairroInfo = BAIRROS_SM.find(b => b.id === bairroPrincipalId) || BAIRROS_SM[0];
@@ -2563,6 +2570,8 @@ async function openCaptar() {
         attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
         maxZoom: 19
       }).addTo(_captarMap);
+      // Força recálculo de tamanho após primeira renderização
+      setTimeout(() => { if (_captarMap) _captarMap.invalidateSize(); }, 400);
       const skipDoresFit = (bairroPrincipalId !== 'dores');
       _carregarPoligonoDores(skipDoresFit);
     } else {
@@ -2571,7 +2580,7 @@ async function openCaptar() {
     }
     _renderBairrosNoMapa();
     renderCaptarProspects();
-  }, 100);
+  }));
 }
 
 function closeCaptar() {
@@ -2838,6 +2847,8 @@ async function salvarProspect() {
     fecharFormProspect();
     showToast('✅ Imóvel atualizado!');
     renderCaptarProspects();
+    // Recarrega histórico se estiver aberto
+    if (document.getElementById('historyOverlay').style.display !== 'none') loadHistory();
     return;
   }
 
