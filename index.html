@@ -750,6 +750,7 @@
         <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">STATUS</label>
         <select id="pStatus" onchange="toggleFollowupDateField()" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;color:#374151;">
           <option value="prospecto">🔍 Prospecto</option>
+          <option value="sem_contato">📵 Sem Contato</option>
           <option value="visitado">👁️ Visitado</option>
           <option value="captado">✅ Captado</option>
           <option value="followup">📅 Follow-up</option>
@@ -760,6 +761,24 @@
         <label style="font-size:12px;font-weight:700;color:#d97706;display:block;margin-bottom:4px;">📅 DATA DO PRÓXIMO CONTATO</label>
         <input type="date" id="pFollowupDate" style="width:100%;padding:10px;border:1.5px solid #fde68a;border-radius:8px;font-size:14px;outline:none;background:#fffbeb;box-sizing:border-box;">
       </div>
+
+      <!-- ── Histórico de Contato ── -->
+      <div style="border-top:1.5px solid #e5e7eb;padding-top:14px;margin-top:2px;">
+        <div style="font-size:11px;font-weight:800;color:#0a1628;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">📋 Histórico de Contato</div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">MOTIVO DO CONTATO</label>
+          <input type="text" id="pMotivoContato" placeholder="Ex: Primeiro contato, retorno, negociação..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">O QUE ACONTECEU / COMO FOI</label>
+          <textarea id="pHistoricoContato" rows="3" placeholder="Descreva como foi: o que o proprietário disse, interesse demonstrado, objeções..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+        </div>
+        <div>
+          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">PRÓXIMO PASSO</label>
+          <textarea id="pProximoPasso" rows="2" placeholder="O que fazer / dizer na próxima ligação ou visita..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+        </div>
+      </div>
+
       <!-- Campos ocultos -->
       <input type="hidden" id="pLat">
       <input type="hidden" id="pLng">
@@ -2074,8 +2093,8 @@ async function loadHistory() {
   }
   // ── Captação não-prospectos — cards expandíveis (calculado ANTES do early-return de visitas) ──
   const _naoProspectos = (_prospectsCache || []).filter(p => p.status !== 'prospecto');
-  const _scMapC = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626' };
-  const _slMapC = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado' };
+  const _scMapC = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626', sem_contato:'#7c3aed' };
+  const _slMapC = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado', sem_contato:'📵 Sem Contato' };
   const _captacaoCompacto = _naoProspectos.length ? (() => {
     const cards = _naoProspectos.map(p => {
       const sc = _scMapC[p.status] || '#6b7280';
@@ -2912,7 +2931,7 @@ function toggleFollowupDateField() {
 
 function abrirFormProspect() {
   // Limpa campos
-  ['pEndereco','pProprietario','pValor','pLink','pObs','pLat','pLng','pEditId','pFollowupDate'].forEach(id => {
+  ['pEndereco','pProprietario','pValor','pLink','pObs','pLat','pLng','pEditId','pFollowupDate','pMotivoContato','pHistoricoContato','pProximoPasso'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('pTipo').value = '';
@@ -3019,18 +3038,21 @@ async function salvarProspect() {
     if (novoStatus === 'followup' && !fuDate) { showToast('⚠️ Selecione a data do próximo contato.'); return; }
     const atualizado = {
       ...existente,
-      endereco:      end,
-      proprietario:  document.getElementById('pProprietario').value.trim(),
-      valor:         document.getElementById('pValor').value.trim(),
-      tipo:          document.getElementById('pTipo').value,
-      link:          document.getElementById('pLink').value.trim(),
-      obs:           document.getElementById('pObs').value.trim(),
-      lat:           parseFloat(document.getElementById('pLat').value) || existente?.lat || null,
-      lng:           parseFloat(document.getElementById('pLng').value) || existente?.lng || null,
-      telefones:     JSON.stringify(_getTelefones()),
-      status:        novoStatus,
-      followup_date: fuDate,
-      updated_at:    new Date().toISOString(),
+      endereco:          end,
+      proprietario:      document.getElementById('pProprietario').value.trim(),
+      valor:             document.getElementById('pValor').value.trim(),
+      tipo:              document.getElementById('pTipo').value,
+      link:              document.getElementById('pLink').value.trim(),
+      obs:               document.getElementById('pObs').value.trim(),
+      lat:               parseFloat(document.getElementById('pLat').value) || existente?.lat || null,
+      lng:               parseFloat(document.getElementById('pLng').value) || existente?.lng || null,
+      telefones:         JSON.stringify(_getTelefones()),
+      status:            novoStatus,
+      followup_date:     fuDate,
+      motivo_contato:    document.getElementById('pMotivoContato').value.trim(),
+      historico_contato: document.getElementById('pHistoricoContato').value.trim(),
+      proximo_passo:     document.getElementById('pProximoPasso').value.trim(),
+      updated_at:        new Date().toISOString(),
     };
     const { error } = await supa.from('captar_prospects').update(atualizado).eq('id', editId);
     if (error) { showToast('⚠️ Erro ao atualizar: ' + error.message); return; }
@@ -3427,9 +3449,12 @@ function editarProspect(id) {
   document.getElementById('pObs').value          = p.obs || '';
   document.getElementById('pLat').value          = p.lat || '';
   document.getElementById('pLng').value          = p.lng || '';
-  document.getElementById('pStatus').value           = p.status || 'prospecto';
-  document.getElementById('pFollowupDate').value      = p.followup_date || '';
-  document.getElementById('pFollowupDateRow').style.display = (p.status === 'followup') ? 'block' : 'none';
+  document.getElementById('pStatus').value                  = p.status || 'prospecto';
+  document.getElementById('pFollowupDate').value             = p.followup_date || '';
+  document.getElementById('pFollowupDateRow').style.display  = (p.status === 'followup') ? 'block' : 'none';
+  document.getElementById('pMotivoContato').value            = p.motivo_contato || '';
+  document.getElementById('pHistoricoContato').value         = p.historico_contato || '';
+  document.getElementById('pProximoPasso').value             = p.proximo_passo || '';
   document.getElementById('geoStatus').textContent    = p.lat ? '✅ Localização já cadastrada.' : '';
   document.getElementById('geoStatus').style.color    = '#16a34a';
   document.getElementById('prospectModalTitle').textContent = 'Editar Imóvel';
@@ -3607,6 +3632,7 @@ function renderCaptarProspects() {
         ${p.lat && p.lng ? `<button onclick="focarNoMapa('${p.id}',${p.lat},${p.lng})" style="background:#e0f2fe;color:#0369a1;border:none;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;">📍 Mapa</button>` : ''}
         <select onchange="alterarStatusProspect('${p.id}',this.value)" style="border:1px solid #e5e7eb;border-radius:8px;padding:5px 8px;font-size:12px;background:#fff;cursor:pointer;color:#374151;">
           <option value="prospecto" selected>🔍 Prospecto</option>
+          <option value="sem_contato">📵 Sem Contato</option>
           <option value="visitado">👁️ Visitado</option>
           <option value="captado">✅ Captado</option>
           <option value="followup">📅 Follow-up</option>
