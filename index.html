@@ -1907,37 +1907,80 @@ async function buscarFotosEditModal() {
   const url = document.getElementById('vEditLink')?.value.trim();
   if (!url || !url.startsWith('http')) { showToast('⚠️ Informe um link válido no campo Link do Anúncio.'); return; }
   const btn = document.getElementById('btnBuscarFotosEdit');
-  if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; btn.textContent = '⏳ Buscando...'; }
+  if (btn) { btn.style.opacity = '0.6'; btn.style.pointerEvents = 'none'; btn.innerHTML = '⏳ Buscando fotos...'; }
   showToast('🔍 Buscando fotos do anúncio...');
+
+  // ── cópia fiel das helpers de buscarFotosDoLink ──
+  function _eImgs(html) {
+    const s = new Set();
+    for (const m of html.matchAll(/property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/gi)) s.add(m[1]);
+    for (const m of html.matchAll(/content=["']([^"']+)["'][^>]*property=["']og:image/gi)) s.add(m[1]);
+    if (s.size >= 3) return s;
+    const nx = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+    if (nx) { try { const j = JSON.stringify(JSON.parse(nx[1])); for (const m of j.matchAll(/"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)(?:\?[^"\\]{0,120})?)"/gi)) { const u=m[1]; if (!u.match(/icon|logo|avatar|sprite|pixel|map|banner|thumb/i)&&u.length>40){s.add(u);if(s.size>=20)break;} } } catch(e) {} }
+    if (s.size >= 3) return s;
+    const ox = html.match(/(?:__PRELOADED_STATE__|window\.__STATE__|window\.__DATA__)["'\s]*[=:]["'\s]*([\s\S]{100,}?)<\/script>/i);
+    if (ox) { try { const raw=ox[1].trim().replace(/^['"]/,'').replace(/['"]$/,''); const j=JSON.stringify(JSON.parse(raw)); for(const m of j.matchAll(/"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)(?:\?[^"\\]{0,120})?)"/gi)){const u=m[1];if(!u.match(/icon|logo|avatar|sprite|pixel|map/i)&&u.length>40){s.add(u);if(s.size>=20)break;}} } catch(e) {} }
+    if (s.size >= 3) return s;
+    for (const m of html.matchAll(/"(?:url|src|image|photo|foto|imageUrl|image_url)"\s*:\s*"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)[^"\\]{0,120})"/gi)) { const u=m[1]; if(!u.match(/icon|logo|avatar|sprite/i)){s.add(u);if(s.size>=20)break;} }
+    if (s.size >= 3) return s;
+    for (const m of html.matchAll(/(?:data-src|data-lazy-src|data-original|src)=["'](https?:[^"']+\.(?:jpg|jpeg|png|webp)[^"']{0,80})["']/gi)) { const u=m[1]; if(!u.match(/icon|logo|avatar|sprite|pixel|map/i)&&u.length>35) s.add(u); if(s.size>=20) break; }
+    return s;
+  }
+  async function _fHtml(pageUrl) {
+    const px = ['https://api.allorigins.win/get?url='+encodeURIComponent(pageUrl), 'https://corsproxy.io/?'+encodeURIComponent(pageUrl)];
+    for (const p of px) { try { const r=await fetch(p,{signal:AbortSignal.timeout(20000)}); if(!r.ok) continue; const ct=r.headers.get('content-type')||''; if(ct.includes('json')){const j=await r.json();const h=j.contents||j.html||'';if(h.length>500)return h;}else{const h=await r.text();if(h.length>500)return h;} } catch(e){} }
+    return '';
+  }
+  async function _fImg(imgUrl) {
+    const wv='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=1200&output=jpg&il';
+    const px=[wv,'https://corsproxy.io/?'+encodeURIComponent(imgUrl),'https://api.allorigins.win/raw?url='+encodeURIComponent(imgUrl)];
+    for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(12000)});if(!r.ok)continue;const b=await r.blob();if((b.type.startsWith('image/')||b.size>3000)&&b.size>2000)return b;}catch(e){}}
+    return null;
+  }
+
   try {
-    const html = await _fetchHtml(url);
+    const html = await _fHtml(url);
     if (!html) {
-      showToast('⚠️ Não acessei o anúncio. Adicione fotos pela galeria.');
+      showToast('⚠️ Não consegui acessar o anúncio. Adicione fotos pela galeria.');
+      if (btn) { btn.style.opacity=''; btn.style.pointerEvents=''; btn.innerHTML='📷 Buscar fotos do link do anúncio'; }
+      return;
+    }
+    const imgUrls = _eImgs(html);
+    const urls = [...imgUrls].slice(0, 15);
+    if (!urls.length) {
+      showToast('⚠️ Site não compartilhou fotos via link. Adicione pela galeria.');
+      if (btn) { btn.style.opacity=''; btn.style.pointerEvents=''; btn.innerHTML='📷 Buscar fotos do link do anúncio'; }
+      return;
+    }
+    // Scroll para mostrar os grids de fotos
+    const grid = document.getElementById('vEditGridInteriores');
+    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    let count = 0;
+    for (const imgUrl of urls) {
+      const blob = await _fImg(imgUrl);
+      if (!blob) continue;
+      const src = await new Promise(res => { comprimirFoto(new File([blob], 'foto.jpg', {type: blob.type}), 1200, 0.82, res); });
+      _vEditSections.interiores.push({ id: Date.now() + Math.random(), src, caption: '' });
+      _vEditRenderGrid('interiores');
+      count++;
+      showToast(`📥 ${count} foto(s) importada(s)...`);
+      if (btn) btn.innerHTML = `⏳ ${count} foto(s)...`;
+      if (count >= 10) break;
+    }
+    if (count > 0) {
+      showToast(`✅ ${count} foto(s) importada(s) do anúncio!`);
+      if (btn) btn.innerHTML = `✅ ${count} foto(s) importada(s)`;
     } else {
-      const imgUrls = _extrairImagensDoHtml(html);
-      const urls = [...imgUrls].slice(0, 15);
-      if (!urls.length) {
-        showToast('⚠️ Site não compartilhou fotos. Adicione pela galeria.');
-      } else {
-        let count = 0;
-        for (const imgUrl of urls) {
-          if (count >= 10) break;
-          const blob = await _fetchImagem(imgUrl);
-          if (!blob) continue;
-          const src = await new Promise(res => comprimirFoto(new File([blob], 'foto.jpg', { type: blob.type }), 1200, 0.82, res));
-          _vEditSections.interiores.push({ id: Date.now() + Math.random(), src, caption: '' });
-          count++;
-          _vEditRenderGrid('interiores');
-          showToast(`📥 ${count} foto(s) importada(s)...`);
-        }
-        if (count > 0) showToast(`✅ ${count} foto(s) importada(s) do anúncio!`);
-        else showToast('⚠️ Site bloqueou download. Salve as fotos e adicione pela galeria.');
-      }
+      showToast('⚠️ Site bloqueou o download das imagens. Salve as fotos e adicione pela galeria.');
+      if (btn) btn.innerHTML = '📷 Buscar fotos do link do anúncio';
     }
   } catch(e) {
     showToast('⚠️ Erro ao buscar fotos. Verifique a conexão.');
+    if (btn) btn.innerHTML = '📷 Buscar fotos do link do anúncio';
   }
-  if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; btn.textContent = '📷 Buscar do Link'; }
+  if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
 }
 
 // ── SALVAR VISITA SEM PDF ──
