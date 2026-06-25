@@ -1318,23 +1318,9 @@
 
       <!-- FOTOS -->
       <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">📷 Fotos do Imóvel</div>
-      <div id="btnBuscarFotosEdit" ontouchstart="" onclick="buscarFotosEditModal()" style="background:#0a1628;color:#fff;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;text-align:center;">📷 Buscar fotos do link do anúncio</div>
-
-      <div class="photo-section-label">📋 Matrícula / Documentação</div>
-      <div class="photo-grid" id="vEditGridMatricula"></div>
-      <input type="file" id="vEditFileMatricula" accept="image/*" multiple style="display:none" onchange="_vEditHandleFiles(this,'matricula')">
-
-      <div class="photo-section-label">🛏️ Interiores</div>
-      <div class="photo-grid" id="vEditGridInteriores"></div>
-      <input type="file" id="vEditFileInteriores" accept="image/*" multiple style="display:none" onchange="_vEditHandleFiles(this,'interiores')">
-
-      <div class="photo-section-label">🏘️ Fachada / Externa</div>
-      <div class="photo-grid" id="vEditGridFachada"></div>
-      <input type="file" id="vEditFileFachada" accept="image/*" multiple style="display:none" onchange="_vEditHandleFiles(this,'fachada')">
-
-      <div class="photo-section-label">⭐ Destaques / Diferenciais</div>
-      <div class="photo-grid" id="vEditGridDestaques"></div>
-      <input type="file" id="vEditFileDestaques" accept="image/*" multiple style="display:none" onchange="_vEditHandleFiles(this,'destaques')">
+      <div ontouchstart="" onclick="epAbrir()" style="background:#0a1628;color:#fff;border-radius:10px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;text-align:center;">
+        📷 Gerenciar Fotos — <span id="vEditPhotoCount">0 fotos</span>
+      </div>
 
       <!-- CARACTERÍSTICAS -->
       <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">📐 Características</div>
@@ -1439,6 +1425,67 @@
         <button onclick="salvarVisitaEditada()" style="flex:2;padding:13px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">💾 Salvar Alterações</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     EDITOR DE FOTOS — tela cheia
+     (mesma estrutura da Ficha de Visita)
+══════════════════════════════════ -->
+<div id="editPhotoOverlay" style="display:none;position:fixed;inset:0;background:#f9fafb;z-index:1300;flex-direction:column;">
+  <!-- Header fixo -->
+  <div style="position:sticky;top:0;background:#0a1628;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;z-index:2;flex-shrink:0;">
+    <h3 style="font-size:16px;font-weight:700;color:#fff;margin:0;">📷 Fotos do Imóvel</h3>
+    <div ontouchstart="" onclick="epAplicar()" style="background:#16a34a;color:#fff;border-radius:8px;padding:8px 18px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">✅ Aplicar</div>
+  </div>
+  <!-- Conteúdo rolável -->
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px;">
+
+    <!-- Link do anúncio + buscar -->
+    <div class="field" style="margin-bottom:16px;">
+      <label>Link do anúncio</label>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="url" id="epLinkInput" placeholder="https://..." style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+        <button id="epBtnBuscar" onclick="buscarFotosEP()"
+          style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;">
+          📷 Buscar
+        </button>
+      </div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:4px;">Toque em "📷 Buscar" para importar as fotos automaticamente</div>
+    </div>
+
+    <div class="photo-section-label">📋 Matrícula / Documentação</div>
+    <div class="photo-grid" id="epGridMatricula">
+      <button class="add-photo-btn" ontouchstart="" onclick="document.getElementById('epFileMatricula').click()">
+        <span class="icon">➕</span><span>Adicionar</span>
+      </button>
+    </div>
+    <input type="file" id="epFileMatricula" accept="image/*" multiple style="display:none" onchange="epHandleFiles(this,'matricula')">
+
+    <div class="photo-section-label">🛏️ Interiores</div>
+    <div class="photo-grid" id="epGridInteriores">
+      <button class="add-photo-btn" ontouchstart="" onclick="document.getElementById('epFileInteriores').click()">
+        <span class="icon">➕</span><span>Adicionar</span>
+      </button>
+    </div>
+    <input type="file" id="epFileInteriores" accept="image/*" multiple style="display:none" onchange="epHandleFiles(this,'interiores')">
+
+    <div class="photo-section-label">🏘️ Fachada / Externa</div>
+    <div class="photo-grid" id="epGridFachada">
+      <button class="add-photo-btn" ontouchstart="" onclick="document.getElementById('epFileFachada').click()">
+        <span class="icon">➕</span><span>Adicionar</span>
+      </button>
+    </div>
+    <input type="file" id="epFileFachada" accept="image/*" multiple style="display:none" onchange="epHandleFiles(this,'fachada')">
+
+    <div class="photo-section-label">⭐ Destaques / Diferenciais</div>
+    <div class="photo-grid" id="epGridDestaques">
+      <button class="add-photo-btn" ontouchstart="" onclick="document.getElementById('epFileDestaques').click()">
+        <span class="icon">➕</span><span>Adicionar</span>
+      </button>
+    </div>
+    <input type="file" id="epFileDestaques" accept="image/*" multiple style="display:none" onchange="epHandleFiles(this,'destaques')">
+
   </div>
 </div>
 
@@ -2002,6 +2049,152 @@ async function buscarFotosEditModal() {
     if (btn) btn.innerHTML = '📷 Buscar fotos do link do anúncio';
   }
   if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; }
+}
+
+// ══════════════════════════════════════════════
+//  EDITOR DE FOTOS — tela cheia (mesma lógica
+//  da Ficha de Visita — código idêntico ao que
+//  funciona em renderGrid / buscarFotosDoLink)
+// ══════════════════════════════════════════════
+const _epPhotos = { matricula: [], interiores: [], fachada: [], destaques: [] };
+
+function epCap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function epRenderGrid(section) {
+  const grid = document.getElementById('epGrid' + epCap(section));
+  if (!grid) return;
+  grid.innerHTML = '';
+  _epPhotos[section].forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'photo-thumb';
+    div.innerHTML = `<img src="${p.src}" loading="lazy">
+      ${p.caption ? `<div class="photo-caption">${p.caption}</div>` : ''}
+      <button class="del-btn" onclick="epRemovePhoto('${section}',${p.id})">✕</button>`;
+    grid.appendChild(div);
+  });
+  const btn = document.createElement('button');
+  btn.className = 'add-photo-btn';
+  btn.setAttribute('ontouchstart', '');
+  btn.onclick = () => document.getElementById('epFile' + epCap(section)).click();
+  btn.innerHTML = '<span class="icon">➕</span><span>Adicionar</span>';
+  grid.appendChild(btn);
+}
+
+function epRenderAll() { Object.keys(_epPhotos).forEach(s => epRenderGrid(s)); }
+
+function epRemovePhoto(section, id) {
+  _epPhotos[section] = _epPhotos[section].filter(p => p.id !== id);
+  epRenderGrid(section);
+}
+
+async function epHandleFiles(input, section) {
+  const files = Array.from(input.files);
+  input.value = '';
+  if (!files.length) return;
+  for (const file of files) {
+    const src = await new Promise(res => comprimirFoto(file, 1200, 0.82, res));
+    _epPhotos[section].push({ id: Date.now() + Math.random(), src, caption: '' });
+    epRenderGrid(section);
+  }
+  showToast(`✅ ${files.length} foto(s) adicionada(s)!`);
+}
+
+function epAbrir() {
+  // Copia _vEditSections → _epPhotos e abre o editor
+  Object.keys(_epPhotos).forEach(s => _epPhotos[s] = []);
+  Object.entries(_vEditSections).forEach(([sec, arr]) => {
+    arr.forEach(p => _epPhotos[sec].push({ id: p.id || Date.now() + Math.random(), src: p.src, caption: p.caption || '' }));
+  });
+  document.getElementById('epLinkInput').value = document.getElementById('vEditLink')?.value || '';
+  epRenderAll();
+  document.getElementById('visitEditModal').style.display = 'none';
+  document.getElementById('editPhotoOverlay').style.display = 'flex';
+}
+
+function epAplicar() {
+  // Copia _epPhotos → _vEditSections e volta ao modal
+  Object.keys(_vEditSections).forEach(s => _vEditSections[s] = _epPhotos[s].map(p => ({ ...p })));
+  const total = Object.values(_vEditSections).reduce((n, a) => n + a.length, 0);
+  const countEl = document.getElementById('vEditPhotoCount');
+  if (countEl) countEl.textContent = total > 0 ? `${total} foto(s)` : '0 fotos';
+  document.getElementById('editPhotoOverlay').style.display = 'none';
+  document.getElementById('visitEditModal').style.display = 'flex';
+}
+
+async function buscarFotosEP() {
+  const url = document.getElementById('epLinkInput').value.trim();
+  if (!url || !url.startsWith('http')) { showToast('⚠️ Informe um link válido (https://...) no campo acima.'); return; }
+  const btn = document.getElementById('epBtnBuscar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  showToast('🔍 Buscando fotos do anúncio...');
+
+  // ── helpers idênticos ao buscarFotosDoLink ──
+  function _epExtrairImgs(html) {
+    const s = new Set();
+    for (const m of html.matchAll(/property=["']og:image(?::secure_url)?["'][^>]*content=["']([^"']+)["']/gi)) s.add(m[1]);
+    for (const m of html.matchAll(/content=["']([^"']+)["'][^>]*property=["']og:image/gi)) s.add(m[1]);
+    if (s.size >= 3) return s;
+    const nx = html.match(/<script[^>]+id=["']__NEXT_DATA__["'][^>]*>([\s\S]*?)<\/script>/i);
+    if (nx) { try { const j=JSON.stringify(JSON.parse(nx[1])); for (const m of j.matchAll(/"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)(?:\?[^"\\]{0,120})?)"/gi)) { const u=m[1]; if (!u.match(/icon|logo|avatar|sprite|pixel|map|banner|thumb/i)&&u.length>40){s.add(u);if(s.size>=20)break;} } } catch(e) {} }
+    if (s.size >= 3) return s;
+    const ox = html.match(/(?:__PRELOADED_STATE__|window\.__STATE__|window\.__DATA__)["'\s]*[=:]["'\s]*([\s\S]{100,}?)<\/script>/i);
+    if (ox) { try { const raw=ox[1].trim().replace(/^['"]/,'').replace(/['"]$/,''); const j=JSON.stringify(JSON.parse(raw)); for(const m of j.matchAll(/"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)(?:\?[^"\\]{0,120})?)"/gi)){const u=m[1];if(!u.match(/icon|logo|avatar|sprite|pixel|map/i)&&u.length>40){s.add(u);if(s.size>=20)break;}} } catch(e) {} }
+    if (s.size >= 3) return s;
+    for (const m of html.matchAll(/"(?:url|src|image|photo|foto|imageUrl|image_url)"\s*:\s*"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)[^"\\]{0,120})"/gi)) { const u=m[1]; if(!u.match(/icon|logo|avatar|sprite/i)){s.add(u);if(s.size>=20)break;} }
+    if (s.size >= 3) return s;
+    for (const m of html.matchAll(/(?:data-src|data-lazy-src|data-original|src)=["'](https?:[^"']+\.(?:jpg|jpeg|png|webp)[^"']{0,80})["']/gi)) { const u=m[1]; if(!u.match(/icon|logo|avatar|sprite|pixel|map/i)&&u.length>35) s.add(u); if(s.size>=20) break; }
+    return s;
+  }
+  async function _epFetchHtml(pageUrl) {
+    const px=['https://api.allorigins.win/get?url='+encodeURIComponent(pageUrl),'https://corsproxy.io/?'+encodeURIComponent(pageUrl)];
+    for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(20000)});if(!r.ok)continue;const ct=r.headers.get('content-type')||'';if(ct.includes('json')){const j=await r.json();const h=j.contents||j.html||'';if(h.length>500)return h;}else{const h=await r.text();if(h.length>500)return h;}}catch(e){}}
+    return '';
+  }
+  async function _epFetchImg(imgUrl) {
+    const wv='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=1200&output=jpg&il';
+    const px=[wv,'https://corsproxy.io/?'+encodeURIComponent(imgUrl),'https://api.allorigins.win/raw?url='+encodeURIComponent(imgUrl)];
+    for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(12000)});if(!r.ok)continue;const b=await r.blob();if((b.type.startsWith('image/')||b.size>3000)&&b.size>2000)return b;}catch(e){}}
+    return null;
+  }
+  // ───────────────────────────────────────────
+
+  try {
+    const html = await _epFetchHtml(url);
+    if (!html) {
+      showToast('⚠️ Não consegui acessar o anúncio. Adicione fotos pela galeria.');
+      if (btn) { btn.disabled = false; btn.textContent = '📷 Buscar'; }
+      return;
+    }
+    const imgUrls = _epExtrairImgs(html);
+    const urls = [...imgUrls].slice(0, 15);
+    if (!urls.length) {
+      showToast('⚠️ Site não compartilhou fotos via link. Adicione pela galeria.');
+      if (btn) { btn.disabled = false; btn.textContent = '📷 Buscar'; }
+      return;
+    }
+    // Scroll para Interiores no editor
+    const epGrid = document.getElementById('epGridInteriores');
+    const epScroll = document.querySelector('#editPhotoOverlay > div:last-child');
+    if (epGrid && epScroll) epScroll.scrollTo({ top: epGrid.offsetTop - 80, behavior: 'smooth' });
+
+    let count = 0;
+    for (const imgUrl of urls) {
+      const blob = await _epFetchImg(imgUrl);
+      if (!blob) continue;
+      const src = await new Promise(res => { comprimirFoto(new File([blob], 'foto.jpg', {type: blob.type}), 1200, 0.82, res); });
+      _epPhotos.interiores.push({ id: Date.now() + Math.random(), src, caption: '' });
+      epRenderGrid('interiores');
+      count++;
+      showToast(`📥 ${count} foto(s) importada(s)...`);
+      if (btn) btn.textContent = `⏳ ${count}...`;
+      if (count >= 10) break;
+    }
+    if (count > 0) showToast(`✅ ${count} foto(s) importada(s) com sucesso!`);
+    else showToast('⚠️ Site bloqueou o download das imagens. Salve as fotos e adicione pela galeria.');
+  } catch(e) {
+    showToast('⚠️ Erro ao buscar fotos. Verifique a conexão e o link.');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '📷 Buscar'; }
 }
 
 // ── SALVAR VISITA SEM PDF ──
@@ -2955,7 +3148,10 @@ async function abrirEditarVisita(vid) {
                    sl.includes('dest') ? 'destaques' : 'interiores';
     _vEditSections[secKey].push({ id: Date.now() + Math.random(), src, caption });
   });
-  _vEditRenderAllGrids();
+  // Atualiza contador de fotos no botão "Gerenciar Fotos"
+  const _totalFotos = Object.values(_vEditSections).reduce((n, a) => n + a.length, 0);
+  const _countEl = document.getElementById('vEditPhotoCount');
+  if (_countEl) _countEl.textContent = _totalFotos > 0 ? `${_totalFotos} foto(s)` : '0 fotos';
   document.getElementById('visitEditModal').style.display = 'flex';
 }
 
