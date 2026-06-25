@@ -1255,31 +1255,27 @@
   </div>
 </div>
 
-<!-- ══ MODAL: Editar Visita ══ -->
+<!-- ══ MODAL: Editar Visita (completo) ══ -->
 <div id="visitEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1100;align-items:flex-end;justify-content:center;">
-  <div style="background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding-bottom:max(20px,env(safe-area-inset-bottom));">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-      <h3 style="font-size:16px;font-weight:700;color:#0a1628;">✏️ Editar Visita</h3>
-      <button onclick="document.getElementById('visitEditModal').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:#9ca3af;line-height:1;">✕</button>
+  <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:94vh;overflow-y:auto;padding-bottom:max(20px,env(safe-area-inset-bottom));">
+    <!-- Header fixo -->
+    <div style="position:sticky;top:0;background:#0a1628;border-radius:20px 20px 0 0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;z-index:2;">
+      <h3 style="font-size:16px;font-weight:700;color:#fff;margin:0;">✏️ Editar Visita</h3>
+      <button onclick="document.getElementById('visitEditModal').style.display='none'" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;">✕ Fechar</button>
     </div>
     <input type="hidden" id="vEditId">
-    <div style="display:grid;gap:12px;">
+    <div style="padding:20px;display:grid;gap:14px;">
+
+      <!-- IMÓVEL -->
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">🏠 Dados do Imóvel</div>
       <div>
-        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">PROPRIETÁRIO</label>
-        <input type="text" id="vEditProp" placeholder="Nome do proprietário" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">TELEFONE DO PROPRIETÁRIO</label>
-        <input type="tel" id="vEditTel" placeholder="(55) 99999-9999" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">ENDEREÇO</label>
-        <input type="text" id="vEditEnd" placeholder="Rua, número, bairro" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">ENDEREÇO</label>
+        <input type="text" id="vEditEnd" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div>
-          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">TIPO DE IMÓVEL</label>
-          <select id="vEditTipo" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;-webkit-appearance:none;">
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">TIPO</label>
+          <select id="vEditTipo" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;box-sizing:border-box;">
             <option value="">Selecione</option>
             <option value="Casa">Casa</option>
             <option value="Apartamento">Apartamento</option>
@@ -1290,13 +1286,117 @@
           </select>
         </div>
         <div>
-          <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">VALOR PEDIDO</label>
-          <input type="text" id="vEditValor" placeholder="R$ 0,00" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">VALOR PEDIDO</label>
+          <input type="text" id="vEditValor" placeholder="R$ 0,00" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">DATA DA VISITA</label>
+          <input type="date" id="vEditData" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">HORA</label>
+          <input type="time" id="vEditHora" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
         </div>
       </div>
       <div>
-        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">STATUS</label>
-        <select id="vEditStatus" onchange="toggleVEditFollowup()" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;-webkit-appearance:none;">
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">CONSERVAÇÃO</label>
+        <select id="vEditConservacao" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;box-sizing:border-box;">
+          <option value="">Selecione</option>
+          <option value="Novo">Novo</option>
+          <option value="Ótimo">Ótimo</option>
+          <option value="Bom">Bom</option>
+          <option value="Regular">Regular</option>
+          <option value="Reformar">Precisa reformar</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">LINK DO ANÚNCIO</label>
+        <input type="url" id="vEditLink" placeholder="https://..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+      </div>
+
+      <!-- CARACTERÍSTICAS -->
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">📐 Características</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">DORMS</label>
+          <input type="text" id="vEditDorms" placeholder="Ex: 3" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">SUÍTES</label>
+          <input type="text" id="vEditSuites" placeholder="Ex: 1" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">BANH</label>
+          <input type="text" id="vEditBanh" placeholder="Ex: 2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">VAGAS</label>
+          <input type="text" id="vEditVagas" placeholder="Ex: 2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">ÁREA (m²)</label>
+          <input type="text" id="vEditArea" placeholder="Ex: 120" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">ADICIONAIS</label>
+        <input type="text" id="vEditAdicionais" placeholder="Piscina, churrasqueira..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+      </div>
+
+      <!-- PROPRIETÁRIO -->
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">👤 Proprietário</div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">NOME</label>
+        <input type="text" id="vEditProp" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">TELEFONE</label>
+        <input type="tel" id="vEditTel" placeholder="(55) 99999-9999" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+      </div>
+
+      <!-- PERGUNTAS -->
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">💬 Perguntas ao Proprietário</div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">O que levou a comprar este imóvel?</label>
+        <textarea id="vEditQ1" rows="2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">O que mais gosta neste imóvel?</label>
+        <textarea id="vEditQ2" rows="2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Se pudesse, o que mudaria?</label>
+        <textarea id="vEditQ3" rows="2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Quanto tempo à venda? Motivação para vender?</label>
+        <textarea id="vEditQ4" rows="2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Em quais imobiliárias? Corretores?</label>
+        <textarea id="vEditQ5" rows="2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Precificação, plano de marketing, relatório?</label>
+        <textarea id="vEditQ6" rows="2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Já teve visitas? Feedback?</label>
+        <textarea id="vEditQ7" rows="2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">Observações gerais</label>
+        <textarea id="vEditQ8" rows="2" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
+      </div>
+
+      <!-- STATUS -->
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">📊 Status</div>
+      <div>
+        <select id="vEditStatus" onchange="toggleVEditFollowup()" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;box-sizing:border-box;">
           <option value="pendente">⏳ Pendente</option>
           <option value="captado">✅ Captado</option>
           <option value="nao_captado">❌ Não Captado</option>
@@ -1304,17 +1404,20 @@
         </select>
       </div>
       <div id="vEditFollowupRow" style="display:none;">
-        <label style="font-size:12px;font-weight:700;color:#d97706;display:block;margin-bottom:4px;">📅 DATA DO PRÓXIMO CONTATO</label>
+        <label style="font-size:11px;font-weight:700;color:#d97706;display:block;margin-bottom:4px;">📅 DATA DO PRÓXIMO CONTATO</label>
         <input type="date" id="vEditFollowupDate" style="width:100%;padding:10px;border:1.5px solid #fde68a;border-radius:8px;font-size:14px;outline:none;background:#fffbeb;box-sizing:border-box;">
       </div>
+
+      <!-- OBSERVAÇÕES -->
       <div>
-        <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">OBSERVAÇÕES</label>
-        <textarea id="vEditObs" rows="3" placeholder="Anotações, follow-up..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;"></textarea>
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">📝 OBSERVAÇÕES GERAIS</label>
+        <textarea id="vEditObs" rows="3" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;"></textarea>
       </div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:16px;">
-      <button onclick="document.getElementById('visitEditModal').style.display='none'" style="flex:1;padding:12px;background:#f3f4f6;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;color:#374151;">Cancelar</button>
-      <button onclick="salvarVisitaEditada()" style="flex:2;padding:12px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">💾 Salvar Alterações</button>
+
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button onclick="document.getElementById('visitEditModal').style.display='none'" style="flex:1;padding:13px;background:#f3f4f6;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;color:#374151;">Cancelar</button>
+        <button onclick="salvarVisitaEditada()" style="flex:2;padding:13px;background:#0a1628;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">💾 Salvar Alterações</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2536,19 +2639,33 @@ async function abrirEditarVisita(vid) {
   if (!supa || !currentUser) return;
   const { data, error } = await supa.from('visits').select('*').eq('id', vid).single();
   if (error || !data) { showToast('⚠️ Não foi possível carregar os dados.'); return; }
-  document.getElementById('vEditId').value          = vid;
-  document.getElementById('vEditProp').value        = data.proprietario_nome || '';
-  document.getElementById('vEditTel').value         = data.proprietario_telefone || '';
-  document.getElementById('vEditEnd').value         = data.endereco || '';
-  document.getElementById('vEditValor').value       = data.valor_pedido || '';
-  document.getElementById('vEditObs').value         = data.observacoes || '';
-  document.getElementById('vEditStatus').value      = data.status || 'pendente';
-  document.getElementById('vEditFollowupDate').value = data.followup_date || '';
-  document.getElementById('vEditFollowupRow').style.display = (data.status === 'follow_up') ? 'block' : 'none';
-  // Tipo de imóvel: tenta match exato, senão fica vazio
+  const q = data.questionario || {};
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  set('vEditId', vid);
+  set('vEditProp',        data.proprietario_nome);
+  set('vEditTel',         data.proprietario_telefone);
+  set('vEditEnd',         data.endereco);
+  set('vEditValor',       data.valor_pedido);
+  set('vEditObs',         data.observacoes);
+  set('vEditStatus',      data.status || 'pendente');
+  set('vEditFollowupDate', data.followup_date);
+  set('vEditData',        data.data_visita);
+  set('vEditHora',        q.hora);
+  set('vEditLink',        q.link_anuncio);
+  set('vEditDorms',       q.dorms);
+  set('vEditSuites',      q.suites);
+  set('vEditBanh',        q.banheiros);
+  set('vEditVagas',       q.vagas);
+  set('vEditArea',        q.area);
+  set('vEditAdicionais',  q.adicionais);
+  set('vEditQ1', q.q1); set('vEditQ2', q.q2); set('vEditQ3', q.q3); set('vEditQ4', q.q4);
+  set('vEditQ5', q.q5); set('vEditQ6', q.q6); set('vEditQ7', q.q7); set('vEditQ8', q.q8);
+  const consEl = document.getElementById('vEditConservacao');
+  if (consEl) consEl.value = q.conservacao || '';
   const tipoSel = document.getElementById('vEditTipo');
-  const tipoOpt = [...tipoSel.options].find(o => o.value === data.tipo_imovel || o.text === data.tipo_imovel);
+  const tipoOpt = [...tipoSel.options].find(o => o.value === data.tipo_imovel);
   tipoSel.value = tipoOpt ? tipoOpt.value : (data.tipo_imovel || '');
+  document.getElementById('vEditFollowupRow').style.display = (data.status === 'follow_up') ? 'block' : 'none';
   document.getElementById('visitEditModal').style.display = 'flex';
 }
 
@@ -2558,15 +2675,29 @@ async function salvarVisitaEditada() {
   const novoStatus = document.getElementById('vEditStatus').value;
   const fuDate = (novoStatus === 'follow_up') ? (document.getElementById('vEditFollowupDate').value || null) : null;
   if (novoStatus === 'follow_up' && !fuDate) { showToast('⚠️ Selecione a data do próximo contato.'); return; }
+  const g = id => document.getElementById(id)?.value.trim() || null;
+  const qAtualizado = {
+    hora: g('vEditHora'), link_anuncio: g('vEditLink'),
+    dorms: g('vEditDorms'), suites: g('vEditSuites'), banheiros: g('vEditBanh'),
+    vagas: g('vEditVagas'), area: g('vEditArea'), adicionais: g('vEditAdicionais'),
+    conservacao: document.getElementById('vEditConservacao')?.value || null,
+    q1: g('vEditQ1'), q2: g('vEditQ2'), q3: g('vEditQ3'), q4: g('vEditQ4'),
+    q5: g('vEditQ5'), q6: g('vEditQ6'), q7: g('vEditQ7'), q8: g('vEditQ8'),
+  };
+  // Preserva campos do questionario que não editamos (data_inicio_gestao, etc.)
+  const existente = (await supa.from('visits').select('questionario').eq('id', vid).single()).data;
+  const qMerged = { ...(existente?.questionario || {}), ...qAtualizado };
   const updates = {
-    proprietario_nome:      document.getElementById('vEditProp').value.trim(),
-    proprietario_telefone:  document.getElementById('vEditTel').value.trim(),
-    endereco:               document.getElementById('vEditEnd').value.trim(),
-    tipo_imovel:            document.getElementById('vEditTipo').value,
-    valor_pedido:           document.getElementById('vEditValor').value.trim(),
-    status:                 novoStatus,
-    followup_date:          fuDate,
-    observacoes:            document.getElementById('vEditObs').value.trim(),
+    proprietario_nome:     g('vEditProp'),
+    proprietario_telefone: g('vEditTel'),
+    endereco:              g('vEditEnd'),
+    tipo_imovel:           document.getElementById('vEditTipo').value,
+    valor_pedido:          g('vEditValor'),
+    data_visita:           document.getElementById('vEditData')?.value || null,
+    status:                novoStatus,
+    followup_date:         fuDate,
+    observacoes:           g('vEditObs'),
+    questionario:          qMerged,
   };
   const { error } = await supa.from('visits').update(updates).eq('id', vid);
   if (error) { showToast('⚠️ Erro ao salvar: ' + error.message); return; }
