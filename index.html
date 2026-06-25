@@ -1981,10 +1981,43 @@ async function syncPendingVisits() {
 window.addEventListener('online',  () => { updateOfflineBadge(); syncPendingVisits(); });
 window.addEventListener('offline', () => { updateOfflineBadge(); });
 
-function buildVisitObject() {
+async function _comprimirFoto(src, maxW = 900, qual = 0.65) {
+  // Reduz dimensão e qualidade para caber no banco sem estourar
+  return new Promise(res => {
+    if (!src || src.startsWith('http')) { res(src); return; } // URL externa: mantém
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxW / img.width);
+      const c = document.createElement('canvas');
+      c.width  = Math.round(img.width  * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      res(c.toDataURL('image/jpeg', qual));
+    };
+    img.onerror = () => res(null);
+    img.src = src;
+  });
+}
+
+async function buildVisitObject() {
   const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
   const nv = id => { const val = v(id); return val !== '—' ? val : null; };
   const totalFotos = Object.values(photos).reduce((s, a) => s + a.length, 0);
+
+  // Comprime e salva fotos (máx 8 fotos no total para não estourar banco)
+  const fotosComprimidas = [];
+  const secLabels = { matricula:'Matrícula', interiores:'Interiores', fachada:'Fachada', destaques:'Destaques' };
+  let fotoCount = 0;
+  for (const [sec, arr] of Object.entries(photos)) {
+    for (const p of arr) {
+      if (fotoCount >= 8) break;
+      const src = await _comprimirFoto(p.src);
+      if (src) fotosComprimidas.push({ src, caption: p.caption || '', section: secLabels[sec] || sec });
+      fotoCount++;
+    }
+    if (fotoCount >= 8) break;
+  }
+
   return {
     user_id:               currentUser.id,
     broker_name:           corretor.nome      || null,
@@ -1996,7 +2029,6 @@ function buildVisitObject() {
     tipo_imovel:           document.querySelector('input[name="tipo"]:checked')?.value || null,
     valor_pedido:          nv('valorPedido'),
     data_visita:           nv('data'),
-    // Tudo em um único JSONB — sem colunas extras necessárias
     questionario: {
       q1: document.getElementById('q1')?.value || '',
       q2: document.getElementById('q2')?.value || '',
@@ -2006,7 +2038,6 @@ function buildVisitObject() {
       q6: document.getElementById('q6')?.value || '',
       q7: document.getElementById('q7')?.value || '',
       q8: document.getElementById('q8')?.value || '',
-      // Características e identificação (sem colunas extras no banco)
       hora:          nv('hora'),
       link_anuncio:  nv('linkAnuncio'),
       conservacao:   document.querySelector('input[name="conservacao"]:checked')?.value || null,
@@ -2016,6 +2047,7 @@ function buildVisitObject() {
       adicionais:    Array.from(document.querySelectorAll('input[name="adicionais"]:checked')).map(x => x.value).join(', ') || null,
       vagas:         nv('vagas'),
       area:          nv('area'),
+      fotos:         fotosComprimidas,
     },
   };
 }
@@ -2023,7 +2055,7 @@ function buildVisitObject() {
 async function saveVisitToCloud() {
   if (!currentUser) return false;
   if (!supa) { alert('Sistema não carregado. Recarregue a página.'); return false; }
-  const visit = buildVisitObject();
+  const visit = await buildVisitObject();
 
   if (!navigator.onLine) {
     const pending = JSON.parse(localStorage.getItem('pendingVisits') || '[]');
@@ -4548,6 +4580,55 @@ async function gerarPDFFromHistory(vid) {
     // ── STATUS ──
     const statusLabels = { captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'📅 Follow-up', pendente:'⏳ Pendente' };
     if (vt.status) drawField('Status', statusLabels[vt.status] || vt.status);
+
+    // ── FOTOS ──
+    const fotosSalvas = q.fotos || [];
+    if (fotosSalvas.length > 0) {
+      drawSec('Fotos do Imóvel');
+      const imgW = (colW - 8) / 3; const imgH = imgW * 0.75;
+      let col = 0; let rowStart = y;
+      for (const foto of fotosSalvas) {
+        if (!foto.src) continue;
+        addPage(imgH + 14);
+        if (col === 0) rowStart = y;
+        const x = M + col * (imgW + 4);
+        try {
+          // Se for URL (não base64), tenta carregar via canvas
+          let srcData = foto.src;
+          if (srcData.startsWith('http')) {
+            // Para URLs externas, tenta adicionar diretamente (pode falhar por CORS)
+            srcData = await new Promise(res => {
+              const img = new Image(); img.crossOrigin = 'anonymous';
+              img.onload = () => {
+                const c = document.createElement('canvas');
+                c.width = img.width; c.height = img.height;
+                c.getContext('2d').drawImage(img,0,0);
+                res(c.toDataURL('image/jpeg', 0.7));
+              };
+              img.onerror = () => res(null);
+              img.src = srcData + (srcData.includes('?') ? '&' : '?') + 't=' + Date.now();
+              setTimeout(() => res(null), 5000);
+            });
+          }
+          if (srcData) {
+            const fmt = srcData.match(/^data:image\/(\w+)/)?.[1]?.toUpperCase() || 'JPEG';
+            doc.addImage(srcData, fmt, x, rowStart, imgW, imgH, undefined, 'FAST');
+          }
+          if (foto.caption) { sf(7,'normal',[100,100,100]); doc.text(foto.caption, x + imgW/2, rowStart + imgH + 3, {align:'center', maxWidth:imgW}); }
+          if (foto.section) { sf(6,'bold',[150,150,150]); doc.text(foto.section, x + imgW/2, rowStart + imgH + 7, {align:'center', maxWidth:imgW}); }
+          doc.setDrawColor(220,220,220); doc.rect(x, rowStart, imgW, imgH, 'S');
+        } catch(e) { console.warn('Foto ignorada:', e); }
+        col++;
+        if (col >= 3) { col = 0; y = rowStart + imgH + 10; }
+      }
+      if (col > 0) y = rowStart + imgH + 10;
+    } else if (q.link_anuncio) {
+      // Sem fotos salvas mas tem link — menciona no PDF
+      addPage(12);
+      sf(8,'normal',[120,120,120]);
+      const linkLines = doc.splitTextToSize('📷 Fotos disponíveis no anúncio: ' + q.link_anuncio, colW);
+      doc.text(linkLines, M, y); y += linkLines.length * 5 + 4;
+    }
 
     // ── FOOTER ──
     const totalPg = doc.getNumberOfPages();
