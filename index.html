@@ -1869,7 +1869,7 @@ function _vEditRenderGrid(section) {
   _vEditSections[section].forEach(p => {
     const div = document.createElement('div');
     div.className = 'photo-thumb';
-    div.innerHTML = `<img src="${p.src}" loading="lazy">
+    div.innerHTML = `<img src="${p.src}" loading="eager">
       ${p.caption ? `<div class="photo-caption">${p.caption}</div>` : ''}
       <button class="del-btn" onclick="_vEditRemovePhoto('${section}',${p.id})">✕</button>`;
     grid.appendChild(div);
@@ -1953,9 +1953,17 @@ async function buscarFotosEditModal() {
       if (btn) { btn.style.opacity=''; btn.style.pointerEvents=''; btn.innerHTML='📷 Buscar fotos do link do anúncio'; }
       return;
     }
-    // Scroll para mostrar os grids de fotos
-    const grid = document.getElementById('vEditGridInteriores');
-    if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Scroll correto dentro do overflow-y:auto no iOS Safari
+    const _scrollToGrid = () => {
+      const grid = document.getElementById('vEditGridInteriores');
+      const modalInner = document.querySelector('#visitEditModal > div');
+      if (grid && modalInner) {
+        const labelEl = grid.previousElementSibling; // photo-section-label
+        const target = labelEl || grid;
+        modalInner.scrollTo({ top: target.offsetTop - 70, behavior: 'smooth' });
+      }
+    };
+    _scrollToGrid();
 
     let count = 0;
     for (const imgUrl of urls) {
