@@ -2210,11 +2210,10 @@ async function loadHistory() {
 
     return `
     <div class="history-card" id="hcard-${vid}">
-      <div class="history-card-header" onclick="toggleCard('${vid}')">
+      <button ontouchstart="" onclick="toggleCard('${vid}')" style="width:100%;background:none;border:none;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0.05);">
         <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-          <!-- Número da visita -->
           <div style="background:#cc0000;color:#fff;border-radius:8px;padding:4px 8px;font-size:13px;font-weight:800;flex-shrink:0;min-width:36px;text-align:center;">#${visitNum}</div>
-          <div class="history-card-main">
+          <div style="flex:1;min-width:0;">
             <div class="history-prop">${vt.proprietario_nome || 'Proprietário não informado'}</div>
             <div class="history-addr">${vt.endereco || '—'}</div>
             <div class="history-meta">${dt}${(vt.questionario?.hora) ? ' às ' + vt.questionario.hora : ''} · ${vt.tipo_imovel || '—'}</div>
@@ -2224,7 +2223,7 @@ async function loadHistory() {
           <span class="status-badge ${sc}">${sl}</span>
           <span id="hcarrow-${vid}" style="font-size:14px;color:#9ca3af;transition:transform .2s;display:inline-block;">▼</span>
         </div>
-      </div>
+      </button>
       <div class="history-card-body" id="hbody-${vid}" style="display:none">
         <div class="status-buttons">
           <button class="sbtn sbtn-captado"  onclick="setStatus('${vid}','captado')">✅ Captado</button>
