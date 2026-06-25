@@ -409,6 +409,10 @@
   .history-card-header {
     display: flex; align-items: center; padding: 14px 16px;
     cursor: pointer; gap: 12px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0,0,0,0.05);
+    user-select: none;
+    -webkit-user-select: none;
   }
   .history-card-main { flex: 1; }
   .history-prop { font-weight: 700; font-size: 15px; color: var(--dark); }
@@ -2216,7 +2220,10 @@ async function loadHistory() {
             <div class="history-meta">${dt}${(vt.questionario?.hora) ? ' às ' + vt.questionario.hora : ''} · ${vt.tipo_imovel || '—'}</div>
           </div>
         </div>
-        <span class="status-badge ${sc}" style="flex-shrink:0;">${sl}</span>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <span class="status-badge ${sc}">${sl}</span>
+          <span id="hcarrow-${vid}" style="font-size:14px;color:#9ca3af;transition:transform .2s;display:inline-block;">▼</span>
+        </div>
       </div>
       <div class="history-card-body" id="hbody-${vid}" style="display:none">
         <div class="status-buttons">
@@ -2225,9 +2232,10 @@ async function loadHistory() {
           <button class="sbtn sbtn-followup" onclick="setStatus('${vid}','follow_up')">🔔 Follow-up</button>
           <button class="sbtn sbtn-pendente" onclick="setStatus('${vid}','pendente')">⏳ Pendente</button>
         </div>
-        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
-          <button onclick="abrirEditarVisita('${vid}')" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar visita</button>
-          <button onclick="confirmarExclusao('${vid}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;">🗑️ Excluir</button>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button onclick="abrirEditarVisita('${vid}')" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;">✏️ Editar</button>
+          <button onclick="gerarPDFFromHistory('${vid}')" style="background:#cc0000;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;">📄 Gerar PDF</button>
+          <button onclick="confirmarExclusao('${vid}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;touch-action:manipulation;margin-left:auto;">🗑️ Excluir</button>
         </div>
 
         <div style="margin:12px 0;border-top:1px solid #f3f4f6;padding-top:12px;">
@@ -2423,7 +2431,10 @@ async function loadMarketingAlerts() {
 
 function toggleCard(id) {
   const b = document.getElementById('hbody-' + id);
-  b.style.display = b.style.display === 'none' ? 'block' : 'none';
+  const arrow = document.getElementById('hcarrow-' + id);
+  const opening = b.style.display === 'none';
+  b.style.display = opening ? 'block' : 'none';
+  if (arrow) arrow.style.transform = opening ? 'rotate(180deg)' : '';
 }
 
 function toggleCCard(id) {
@@ -4195,6 +4206,151 @@ async function generatePDF() {
     showToast('❌ Erro ao gerar PDF. Tente novamente.');
   }
   document.getElementById('spinner').classList.remove('show');
+}
+
+// ═══ PDF A PARTIR DO HISTÓRICO ═══
+async function gerarPDFFromHistory(vid) {
+  showToast('⏳ Gerando PDF...');
+  let vt = null;
+  // Tenta carregar do Supabase
+  if (supa) {
+    const { data } = await supa.from('visits').select('*').eq('id', vid).single();
+    if (data) vt = data;
+  }
+  if (!vt) { showToast('⚠️ Não foi possível carregar os dados.'); return; }
+
+  const balloonPng = await svgToPng('.logo-balloon');
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const W = 210, M = 14, colW = W - 2 * M;
+    let y = 0;
+
+    const sf = (size, style = 'normal', color = [26,26,26]) => {
+      doc.setFontSize(size); doc.setFont('helvetica', style); doc.setTextColor(...color);
+    };
+    const addPage = (need = 20) => { if (y + need > 280) { doc.addPage(); y = 20; } };
+    const rect = (x, iy, w, h, fill, stroke) => {
+      if (fill) { doc.setFillColor(...fill); doc.rect(x, iy, w, h, 'F'); }
+      if (stroke) { doc.setDrawColor(...stroke); doc.rect(x, iy, w, h, 'S'); }
+    };
+    const drawSec = (title) => {
+      addPage(16);
+      rect(M, y, colW, 9, [240,240,240]); doc.setDrawColor(220,220,220); doc.rect(M, y, colW, 9, 'S');
+      sf(10, 'bold', [26,26,26]); doc.text(title, M + 3, y + 6.2); y += 13;
+    };
+    const drawField = (label, value) => {
+      if (!value || value === '—') return;
+      addPage(12);
+      sf(7,'bold',[120,130,145]); doc.text(label.toUpperCase(), M, y); y += 4;
+      sf(10,'normal',[26,26,26]);
+      const lines = doc.splitTextToSize(String(value), colW);
+      doc.text(lines, M, y); y += lines.length * 5.5 + 3;
+      doc.setDrawColor(238,238,238); doc.line(M, y-1, W-M, y-1);
+    };
+
+    // ── HEADER ──
+    const hdrH = 46;
+    rect(0, 0, W, hdrH, [10,22,40]);
+    const bH = 22, bW = bH * (90/110);
+    if (balloonPng) doc.addImage(balloonPng, 'PNG', M, 2, bW, bH);
+    const rx = M + bW + 4;
+    sf(6,'bold',[255,255,255]); doc.text('IMOVEIS', rx, 8, {charSpace:0.5});
+    sf(20,'bold',[255,255,255]); doc.text('REMAX', rx, 20);
+    sf(8,'italic',[230,230,230]); doc.text('Noble', rx, 28, {charSpace:0.4});
+    const logoX = W - M - 52;
+    sf(9,'normal',[255,255,255]);
+    doc.text('ADRIANO', logoX + 52, 13, {align:'right', charSpace:0.55});
+    doc.setDrawColor(200,215,230); doc.setLineWidth(0.45);
+    doc.line(logoX, 16.2, logoX+52, 16.2); doc.line(logoX, 18.0, logoX+52, 18.0);
+    doc.text('AGUIRRE', logoX+52, 27, {align:'right', charSpace:0.55});
+    y = hdrH + 4;
+
+    // ── BLOCO CORRETOR ──
+    const corretor = JSON.parse(localStorage.getItem('corretor') || '{}');
+    const cn = vt.broker_name || corretor.nome || '';
+    const cc = vt.broker_creci || corretor.creci || '';
+    const ct = vt.broker_phone || corretor.telefone || '';
+    const fotoCorretor = localStorage.getItem('corretorFoto');
+    const blocoH = 30;
+    rect(0, y, W, blocoH, [245,247,250]); doc.setDrawColor(220,225,232); doc.setLineWidth(0.3); doc.rect(0, y, W, blocoH, 'S');
+    const fotoSize = 22, fotoY = y + (blocoH - fotoSize) / 2;
+    if (fotoCorretor) { try { doc.addImage(fotoCorretor,'JPEG',M,fotoY,fotoSize,fotoSize); doc.setDrawColor(180,190,205); doc.setLineWidth(0.4); doc.rect(M,fotoY,fotoSize,fotoSize,'S'); } catch(e){} }
+    const txtX = M + (fotoCorretor ? fotoSize + 5 : 0);
+    doc.setFillColor(204,0,0); doc.rect(txtX, y+5, 1.2, blocoH-10, 'F');
+    const dadosX = txtX + 5;
+    if (cn) { sf(13,'bold',[10,22,40]); doc.text(cn, dadosX, y+11); }
+    sf(8,'normal',[80,95,115]);
+    const infoLine = [cc ? 'CRECI ' + cc : '', ct || ''].filter(Boolean).join('    ·    ');
+    if (infoLine) doc.text(infoLine, dadosX, y+18);
+    sf(7,'normal',[130,145,165]); doc.text('REMAX Noble — Corretor de Imóveis', dadosX, y+24);
+    const now = new Date();
+    sf(7,'normal',[130,145,165]);
+    doc.text('Gerado em ' + now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}), W-M, y+blocoH-5, {align:'right'});
+    y += blocoH + 8;
+
+    // ── IDENTIFICAÇÃO ──
+    const q = vt.questionario || {};
+    const dtVisita = vt.data_visita ? new Date(vt.data_visita + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+    drawSec('Identificação do Imóvel');
+    drawField('Proprietário', vt.proprietario_nome);
+    if (vt.proprietario_telefone) drawField('Telefone do proprietário', vt.proprietario_telefone);
+    drawField('Endereço / Imóvel', vt.endereco);
+    if (dtVisita || q.hora) drawField('Data e hora', [dtVisita, q.hora ? 'às ' + q.hora : ''].filter(Boolean).join(' '));
+    drawField('Tipo de imóvel', vt.tipo_imovel);
+    if (q.conservacao) drawField('Estado de conservação', q.conservacao);
+    if (q.linkAnuncio) drawField('Link do anúncio', q.linkAnuncio);
+
+    // ── CARACTERÍSTICAS ──
+    drawSec('Características');
+    const dormStr = [q.dorms ? q.dorms + ' dorms' : '', q.suites ? q.suites + ' suítes' : '', q.banheiros ? q.banheiros + ' banh' : ''].filter(Boolean).join(' · ');
+    if (dormStr) drawField('Dormitórios / Suítes / Banheiros', dormStr);
+    if (q.vagas) drawField('Vagas de garagem', q.vagas);
+    if (q.area) drawField('Área', q.area + ' m²');
+    if (q.adicionais) drawField('Adicionais', q.adicionais);
+    drawField('Valor pedido pelo proprietário', vt.valor_pedido);
+
+    // ── PERGUNTAS ──
+    const perguntas = [
+      ['O que levou vocês a comprar este imóvel?','q1'],
+      ['O que mais gosta neste imóvel?','q2'],
+      ['Se pudesse, o que mudaria?','q3'],
+      ['Quanto tempo à venda? Motivação para vender?','q4'],
+      ['Em quais imobiliárias? Corretores?','q5'],
+      ['Precificação, plano de marketing, relatório?','q6'],
+      ['Já teve visitas? Feedback?','q7'],
+      ['Observações gerais','q8'],
+    ];
+    const pergRows = perguntas.filter(([,id]) => q[id]);
+    if (pergRows.length) {
+      drawSec('Perguntas ao Proprietário');
+      pergRows.forEach(([label, id]) => drawField(label, q[id]));
+    }
+
+    if (vt.observacoes) { drawSec('Observações'); drawField('Observações', vt.observacoes); }
+
+    // ── STATUS ──
+    const statusLabels = { captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'📅 Follow-up', pendente:'⏳ Pendente' };
+    if (vt.status) drawField('Status', statusLabels[vt.status] || vt.status);
+
+    // ── FOOTER ──
+    const totalPg = doc.getNumberOfPages();
+    for (let p = 1; p <= totalPg; p++) {
+      doc.setPage(p);
+      rect(0, 287, W, 10, [10,22,40]); sf(7,'normal',[140,165,195]);
+      doc.text('REMAX Noble — Ficha de Visita', M, 293);
+      if (cn) doc.text(cn, W/2, 293, {align:'center'});
+      doc.text('Pág. ' + p + ' / ' + totalPg, W-M, 293, {align:'right'});
+    }
+
+    const propNome = (vt.proprietario_nome || 'visita').replace(/[^a-z0-9]/gi,'_').toLowerCase();
+    const dtStr = (vt.data_visita || '').replace(/-/g,'');
+    doc.save(`ficha_visita_${propNome}_${dtStr}.pdf`);
+    showToast('✅ PDF gerado!');
+  } catch(err) {
+    console.error(err);
+    showToast('❌ Erro ao gerar PDF.');
+  }
 }
 
 function showToast(msg) {
