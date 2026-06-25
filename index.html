@@ -4547,7 +4547,8 @@ async function gerarPDFFromHistory(vid) {
     if (dtVisita || q.hora) drawField('Data e hora', [dtVisita, q.hora ? 'às ' + q.hora : ''].filter(Boolean).join(' '));
     drawField('Tipo de imóvel', vt.tipo_imovel);
     if (q.conservacao) drawField('Estado de conservação', q.conservacao);
-    if (q.linkAnuncio) drawField('Link do anúncio', q.linkAnuncio);
+    const linkAnuncio = q.link_anuncio || q.linkAnuncio || null;
+    if (linkAnuncio) drawField('Link do anúncio', linkAnuncio);
 
     // ── CARACTERÍSTICAS ──
     drawSec('Características');
@@ -4622,11 +4623,11 @@ async function gerarPDFFromHistory(vid) {
         if (col >= 3) { col = 0; y = rowStart + imgH + 10; }
       }
       if (col > 0) y = rowStart + imgH + 10;
-    } else if (q.link_anuncio) {
-      // Sem fotos salvas mas tem link — menciona no PDF
+    } else if (q.link_anuncio || q.linkAnuncio) {
+      const lnk = q.link_anuncio || q.linkAnuncio;
       addPage(12);
       sf(8,'normal',[120,120,120]);
-      const linkLines = doc.splitTextToSize('📷 Fotos disponíveis no anúncio: ' + q.link_anuncio, colW);
+      const linkLines = doc.splitTextToSize('📷 Fotos disponíveis no anúncio: ' + lnk, colW);
       doc.text(linkLines, M, y); y += linkLines.length * 5 + 4;
     }
 
