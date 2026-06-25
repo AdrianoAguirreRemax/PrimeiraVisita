@@ -1317,13 +1317,24 @@
       </div>
 
       <!-- FOTOS -->
-      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">📷 Fotos</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        <div id="btnBuscarFotosEdit" ontouchstart="" onclick="buscarFotosEditModal()" style="background:#0a1628;color:#fff;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">📷 Buscar do Link</div>
-        <label for="inputFotoEditModal" ontouchstart="" style="background:#f3f4f6;color:#374151;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">📁 Galeria</label>
-        <input type="file" id="inputFotoEditModal" accept="image/*" multiple style="display:none" onchange="adicionarFotoEditModal(this)">
-      </div>
-      <div id="vEditFotosGrid" style="display:flex;flex-wrap:wrap;gap:8px;min-height:20px;margin-top:4px;"></div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">📷 Fotos do Imóvel</div>
+      <div id="btnBuscarFotosEdit" ontouchstart="" onclick="buscarFotosEditModal()" style="background:#0a1628;color:#fff;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;text-align:center;">📷 Buscar fotos do link do anúncio</div>
+
+      <div class="photo-section-label">📋 Matrícula / Documentação</div>
+      <div class="photo-grid" id="vEditGridMatricula"></div>
+      <input type="file" id="vEditFileMatricula" accept="image/*" multiple style="display:none" onchange="_vEditHandleFiles(this,'matricula')">
+
+      <div class="photo-section-label">🛏️ Interiores</div>
+      <div class="photo-grid" id="vEditGridInteriores"></div>
+      <input type="file" id="vEditFileInteriores" accept="image/*" multiple style="display:none" onchange="_vEditHandleFiles(this,'interiores')">
+
+      <div class="photo-section-label">🏘️ Fachada / Externa</div>
+      <div class="photo-grid" id="vEditGridFachada"></div>
+      <input type="file" id="vEditFileFachada" accept="image/*" multiple style="display:none" onchange="_vEditHandleFiles(this,'fachada')">
+
+      <div class="photo-section-label">⭐ Destaques / Diferenciais</div>
+      <div class="photo-grid" id="vEditGridDestaques"></div>
+      <input type="file" id="vEditFileDestaques" accept="image/*" multiple style="display:none" onchange="_vEditHandleFiles(this,'destaques')">
 
       <!-- CARACTERÍSTICAS -->
       <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;margin-top:4px;">📐 Características</div>
@@ -1845,43 +1856,51 @@ async function buscarFotosDoLink() {
   btn.disabled = false; btn.textContent = '📷 Fotos';
 }
 
-// ── FOTOS NO MODAL DE EDIÇÃO ──
-let _vEditPhotos = [];
+// ── FOTOS NO MODAL DE EDIÇÃO (4 seções iguais à primeira visita) ──
+const _vEditSections   = { matricula: [], interiores: [], fachada: [], destaques: [] };
+const _vEditSecLabels  = { matricula:'Matrícula', interiores:'Interiores', fachada:'Fachada', destaques:'Destaques' };
 
-function _renderVEditFotosGrid() {
-  const grid = document.getElementById('vEditFotosGrid');
+function _vEditCap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function _vEditRenderGrid(section) {
+  const grid = document.getElementById('vEditGrid' + _vEditCap(section));
   if (!grid) return;
-  if (!_vEditPhotos.length) {
-    grid.innerHTML = '<div style="color:#9ca3af;font-size:12px;padding:6px 0;">Nenhuma foto. Use os botões acima para adicionar.</div>';
-    return;
-  }
-  grid.innerHTML = _vEditPhotos.map((f, i) => `
-    <div style="position:relative;width:80px;height:80px;flex-shrink:0;">
-      <img src="${f.src}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1.5px solid #e5e7eb;">
-      <div ontouchstart="" onclick="_removerFotoEdit(${i})" style="position:absolute;top:-6px;right:-6px;background:#dc2626;color:#fff;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;cursor:pointer;line-height:1;">×</div>
-    </div>
-  `).join('');
+  grid.innerHTML = '';
+  _vEditSections[section].forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'photo-thumb';
+    div.innerHTML = `<img src="${p.src}" loading="lazy">
+      ${p.caption ? `<div class="photo-caption">${p.caption}</div>` : ''}
+      <button class="del-btn" onclick="_vEditRemovePhoto('${section}',${p.id})">✕</button>`;
+    grid.appendChild(div);
+  });
+  const btn = document.createElement('button');
+  btn.className = 'add-photo-btn';
+  btn.setAttribute('ontouchstart', '');
+  btn.onclick = () => document.getElementById('vEditFile' + _vEditCap(section)).click();
+  btn.innerHTML = `<span class="icon">➕</span><span>Adicionar</span>`;
+  grid.appendChild(btn);
 }
 
-function _removerFotoEdit(i) {
-  _vEditPhotos.splice(i, 1);
-  _renderVEditFotosGrid();
+function _vEditRenderAllGrids() {
+  Object.keys(_vEditSections).forEach(s => _vEditRenderGrid(s));
 }
 
-function adicionarFotoEditModal(input) {
-  if (!input.files || !input.files.length) return;
-  const files = [...input.files];
-  let count = 0;
-  for (const file of files) {
-    if (_vEditPhotos.length >= 10) break;
-    comprimirFoto(file, 1200, 0.82, src => {
-      _vEditPhotos.push({ src, caption: '' });
-      _renderVEditFotosGrid();
-    });
-    count++;
-  }
+function _vEditRemovePhoto(section, id) {
+  _vEditSections[section] = _vEditSections[section].filter(p => p.id !== id);
+  _vEditRenderGrid(section);
+}
+
+async function _vEditHandleFiles(input, section) {
+  const files = Array.from(input.files);
   input.value = '';
-  if (count) showToast(`📥 ${count} foto(s) adicionada(s)`);
+  if (!files.length) return;
+  for (const file of files) {
+    const src = await new Promise(res => comprimirFoto(file, 1200, 0.82, res));
+    _vEditSections[section].push({ id: Date.now() + Math.random(), src, caption: '' });
+  }
+  _vEditRenderGrid(section);
+  showToast(`✅ ${files.length} foto(s) adicionada(s)!`);
 }
 
 async function buscarFotosEditModal() {
@@ -1902,15 +1921,14 @@ async function buscarFotosEditModal() {
       } else {
         let count = 0;
         for (const imgUrl of urls) {
-          if (_vEditPhotos.length >= 10) break;
+          if (count >= 10) break;
           const blob = await _fetchImagem(imgUrl);
           if (!blob) continue;
           const src = await new Promise(res => comprimirFoto(new File([blob], 'foto.jpg', { type: blob.type }), 1200, 0.82, res));
-          _vEditPhotos.push({ src, caption: '' });
+          _vEditSections.interiores.push({ id: Date.now() + Math.random(), src, caption: '' });
           count++;
-          _renderVEditFotosGrid();
+          _vEditRenderGrid('interiores');
           showToast(`📥 ${count} foto(s) importada(s)...`);
-          if (count >= 10) break;
         }
         if (count > 0) showToast(`✅ ${count} foto(s) importada(s) do anúncio!`);
         else showToast('⚠️ Site bloqueou download. Salve as fotos e adicione pela galeria.');
@@ -2861,9 +2879,19 @@ async function abrirEditarVisita(vid) {
   const tipoOpt = [...tipoSel.options].find(o => o.value === data.tipo_imovel);
   tipoSel.value = tipoOpt ? tipoOpt.value : (data.tipo_imovel || '');
   document.getElementById('vEditFollowupRow').style.display = (data.status === 'follow_up') ? 'block' : 'none';
-  // Carrega fotos existentes no grid
-  _vEditPhotos = (q.fotos || []).map(f => ({ src: f.src || f, caption: f.caption || '', section: f.section || '' }));
-  _renderVEditFotosGrid();
+  // Carrega fotos existentes nas 4 seções
+  Object.keys(_vEditSections).forEach(s => _vEditSections[s] = []);
+  (q.fotos || []).forEach(f => {
+    const src = f.src || f;
+    const caption = f.caption || '';
+    const sl = (f.section || '').toLowerCase();
+    const secKey = sl.includes('matr') ? 'matricula' :
+                   sl.includes('inter') ? 'interiores' :
+                   sl.includes('fach') ? 'fachada' :
+                   sl.includes('dest') ? 'destaques' : 'interiores';
+    _vEditSections[secKey].push({ id: Date.now() + Math.random(), src, caption });
+  });
+  _vEditRenderAllGrids();
   document.getElementById('visitEditModal').style.display = 'flex';
 }
 
@@ -2885,15 +2913,15 @@ async function salvarVisitaEditada() {
   // Preserva campos do questionario que não editamos (data_inicio_gestao, etc.)
   const existente = (await supa.from('visits').select('questionario').eq('id', vid).single()).data;
   const qMerged = { ...(existente?.questionario || {}), ...qAtualizado };
-  // Comprime e salva estado atual das fotos
-  if (_vEditPhotos.length > 0) {
-    const fotosParaSalvar = [];
-    for (const f of _vEditPhotos) {
-      const src = await _comprimirFoto(f.src, 900, 0.65);
-      if (src) fotosParaSalvar.push({ src, caption: f.caption || '', section: f.section || '' });
+  // Comprime e salva fotos de todas as 4 seções
+  const fotosParaSalvar = [];
+  for (const [sec, arr] of Object.entries(_vEditSections)) {
+    for (const p of arr) {
+      const src = await _comprimirFoto(p.src, 900, 0.65);
+      if (src) fotosParaSalvar.push({ src, caption: p.caption || '', section: _vEditSecLabels[sec] || sec });
     }
-    qMerged.fotos = fotosParaSalvar;
   }
+  qMerged.fotos = fotosParaSalvar;
   const updates = {
     proprietario_nome:     g('vEditProp'),
     proprietario_telefone: g('vEditTel'),
