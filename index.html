@@ -1223,6 +1223,38 @@
   </div>
 </div>
 
+<!-- ══ MODAL: Detalhe Visita ══ -->
+<div id="visitDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1050;align-items:flex-end;justify-content:center;" onclick="if(event.target===this)fecharDetalheVisita()">
+  <div style="background:#fff;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding-bottom:max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;">
+    <!-- Header fixo -->
+    <div style="position:sticky;top:0;background:#0a1628;border-radius:20px 20px 0 0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;z-index:2;flex-shrink:0;">
+      <div>
+        <div id="vdProp" style="font-size:16px;font-weight:700;color:#fff;"></div>
+        <div id="vdEnd" style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;"></div>
+      </div>
+      <button onclick="fecharDetalheVisita()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;border-radius:8px;padding:6px 12px;font-size:13px;cursor:pointer;">✕ Fechar</button>
+    </div>
+    <!-- Ações principais -->
+    <div style="display:flex;gap:10px;padding:14px 20px 10px;flex-shrink:0;">
+      <button id="vdBtnEdit" ontouchstart="" style="flex:1;background:#0a1628;color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">✏️ Editar</button>
+      <button id="vdBtnPdf" ontouchstart="" style="flex:1;background:#cc0000;color:#fff;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">📄 Gerar PDF</button>
+      <button id="vdBtnDel" ontouchstart="" style="flex:1;background:none;border:1.5px solid #fee2e2;color:#dc2626;border-radius:10px;padding:11px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">🗑️ Excluir</button>
+    </div>
+    <!-- Status -->
+    <div style="padding:0 20px 12px;flex-shrink:0;">
+      <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:8px;">Alterar Status</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button ontouchstart="" onclick="vdSetStatus('captado')" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">✅ Captado</button>
+        <button ontouchstart="" onclick="vdSetStatus('nao_captado')" style="background:#fee2e2;color:#991b1b;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">❌ Não Captado</button>
+        <button ontouchstart="" onclick="vdSetStatus('follow_up')" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">🔔 Follow-up</button>
+        <button ontouchstart="" onclick="vdSetStatus('pendente')" style="background:#fef3c7;color:#92400e;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">⏳ Pendente</button>
+      </div>
+    </div>
+    <!-- Conteúdo scrollável -->
+    <div id="vdBody" style="padding:0 20px 20px;flex:1;"></div>
+  </div>
+</div>
+
 <!-- ══ MODAL: Editar Visita ══ -->
 <div id="visitEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:1100;align-items:flex-end;justify-content:center;">
   <div style="background:#fff;border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding-bottom:max(20px,env(safe-area-inset-bottom));">
@@ -2210,7 +2242,7 @@ async function loadHistory() {
 
     return `
     <div class="history-card" id="hcard-${vid}">
-      <button ontouchstart="" onclick="toggleCard('${vid}')" style="width:100%;background:none;border:none;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0.05);">
+      <button ontouchstart="" onclick="abrirDetalheVisita('${vid}')" style="width:100%;background:none;border:none;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0.08);">
         <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
           <div style="background:#cc0000;color:#fff;border-radius:8px;padding:4px 8px;font-size:13px;font-weight:800;flex-shrink:0;min-width:36px;text-align:center;">#${visitNum}</div>
           <div style="flex:1;min-width:0;">
@@ -2221,55 +2253,9 @@ async function loadHistory() {
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
           <span class="status-badge ${sc}">${sl}</span>
-          <span id="hcarrow-${vid}" style="font-size:14px;color:#9ca3af;transition:transform .2s;display:inline-block;">▼</span>
+          <span style="font-size:14px;color:#9ca3af;">›</span>
         </div>
       </button>
-      <div class="history-card-body" id="hbody-${vid}" style="display:none">
-        <div class="status-buttons">
-          <button class="sbtn sbtn-captado"  onclick="setStatus('${vid}','captado')">✅ Captado</button>
-          <button class="sbtn sbtn-nao"      onclick="setStatus('${vid}','nao_captado')">❌ Não Captado</button>
-          <button class="sbtn sbtn-followup" onclick="setStatus('${vid}','follow_up')">🔔 Follow-up</button>
-          <button class="sbtn sbtn-pendente" onclick="setStatus('${vid}','pendente')">⏳ Pendente</button>
-        </div>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-          <button onclick="abrirEditarVisita('${vid}')" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;">✏️ Editar</button>
-          <button onclick="gerarPDFFromHistory('${vid}')" style="background:#cc0000;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;">📄 Gerar PDF</button>
-          <button onclick="confirmarExclusao('${vid}')" style="background:none;border:1px solid #fee2e2;color:#dc2626;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;touch-action:manipulation;margin-left:auto;">🗑️ Excluir</button>
-        </div>
-
-        <div style="margin:12px 0;border-top:1px solid #f3f4f6;padding-top:12px;">
-          <div style="font-size:12px;font-weight:700;color:#0a1628;margin-bottom:8px;">📋 DADOS DA VISITA</div>
-          ${row('Corretor', vt.broker_name)}
-          ${row('CRECI', vt.broker_creci)}
-          ${row('Telefone corretor', vt.broker_phone)}
-          ${row('Proprietário', vt.proprietario_nome)}
-          ${row('Tel. proprietário', vt.proprietario_telefone)}
-          ${row('Endereço', vt.endereco)}
-          ${row('Tipo', vt.tipo_imovel)}
-          ${(vt.status === 'follow_up' && vt.followup_date) ? `<div class="history-detail" style="background:#fffbeb;border:1px solid #fde68a;border-radius:7px;padding:7px 10px;margin-bottom:6px;"><strong>📅 Follow-up:</strong> ${_formatarData(vt.followup_date)}</div>` : ''}
-          ${row('Conservação', vt.questionario?.conservacao)}
-          ${row('Dormitórios', vt.questionario?.dorms)}
-          ${row('Suítes', vt.questionario?.suites)}
-          ${row('Banheiros', vt.questionario?.banheiros)}
-          ${row('Vagas', vt.questionario?.vagas)}
-          ${row('Área', vt.questionario?.area ? vt.questionario.area + ' m²' : null)}
-          ${row('Adicionais', vt.questionario?.adicionais)}
-          ${row('Valor pedido', vt.valor_pedido)}
-          ${vt.questionario?.link_anuncio ? `<div class="history-detail"><strong>Link:</strong> <a href="${vt.questionario.link_anuncio}" target="_blank" style="color:#0a1628;">${vt.questionario.link_anuncio}</a></div>` : ''}
-        </div>
-
-        ${qRows ? `<div style="margin:12px 0;border-top:1px solid #f3f4f6;padding-top:12px;">
-          <div style="font-size:12px;font-weight:700;color:#0a1628;margin-bottom:8px;">💬 PERGUNTAS</div>
-          ${qRows}
-        </div>` : ''}
-
-        ${planoMarketing}
-
-        <div class="obs-area">
-          <textarea id="obs-${vid}" placeholder="Observações / follow-up..." rows="3">${vt.observacoes || ''}</textarea>
-          <button class="sbtn sbtn-save" onclick="saveObs('${vid}')">💾 Salvar observação</button>
-        </div>
-      </div>
     </div>`;
   }).join('');
 
@@ -2429,11 +2415,113 @@ async function loadMarketingAlerts() {
 }
 
 function toggleCard(id) {
-  const b = document.getElementById('hbody-' + id);
-  const arrow = document.getElementById('hcarrow-' + id);
-  const opening = b.style.display === 'none';
-  b.style.display = opening ? 'block' : 'none';
-  if (arrow) arrow.style.transform = opening ? 'rotate(180deg)' : '';
+  // mantido por compatibilidade — agora usa modal
+  abrirDetalheVisita(id);
+}
+
+// ─── MODAL DETALHE VISITA ───────────────────────────────────────────────────
+let _vdCurrentId = null;
+
+async function abrirDetalheVisita(vid) {
+  _vdCurrentId = vid;
+  // Busca dados
+  let vt = null;
+  if (supa) {
+    const { data } = await supa.from('visits').select('*').eq('id', vid).single();
+    if (data) vt = data;
+  }
+  if (!vt) { showToast('⚠️ Não foi possível carregar.'); return; }
+
+  const statusLabel = { captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'📅 Follow-up', pendente:'⏳ Pendente' };
+  const dt = vt.data_visita ? new Date(vt.data_visita + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+  const q = vt.questionario || {};
+
+  // Header
+  document.getElementById('vdProp').textContent = vt.proprietario_nome || 'Proprietário não informado';
+  document.getElementById('vdEnd').textContent  = (vt.endereco || '') + (dt !== '—' ? ' · ' + dt : '');
+
+  // Botões de ação
+  document.getElementById('vdBtnEdit').onclick = () => { fecharDetalheVisita(); setTimeout(() => abrirEditarVisita(vid), 200); };
+  document.getElementById('vdBtnPdf').onclick  = () => gerarPDFFromHistory(vid);
+  document.getElementById('vdBtnDel').onclick  = () => { fecharDetalheVisita(); setTimeout(() => confirmarExclusao(vid), 200); };
+
+  // Conteúdo
+  const row = (label, val) => val ? `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;">${label}</div>
+      <div style="font-size:14px;color:#1f2937;margin-top:2px;">${val}</div>
+    </div>` : '';
+
+  const Q_LABELS = [
+    'O que levou a comprar este imóvel?','O que mais gosta?','O que mudaria?',
+    'Tempo à venda? Motivação?','Em quais imobiliárias?','Precificação / plano de marketing?',
+    'Visitas anteriores?','Observações gerais'
+  ];
+
+  let html = `<div style="border-top:1px solid #f3f4f6;padding-top:14px;">`;
+  html += `<div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">📋 Dados da Visita</div>`;
+  html += row('Status', statusLabel[vt.status] || vt.status);
+  if (vt.status === 'follow_up' && vt.followup_date) {
+    html += `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:13px;"><strong>📅 Follow-up:</strong> ${_formatarData(vt.followup_date)}</div>`;
+  }
+  html += row('Corretor', vt.broker_name);
+  html += row('CRECI', vt.broker_creci);
+  html += row('Telefone corretor', vt.broker_phone);
+  html += row('Proprietário', vt.proprietario_nome);
+  html += row('Tel. proprietário', vt.proprietario_telefone);
+  html += row('Endereço', vt.endereco);
+  html += row('Tipo de imóvel', vt.tipo_imovel);
+  html += row('Valor pedido', vt.valor_pedido);
+  html += row('Conservação', q.conservacao);
+  const dormStr = [q.dorms ? q.dorms + ' dorms' : '', q.suites ? q.suites + ' suítes' : '', q.banheiros ? q.banheiros + ' banh' : ''].filter(Boolean).join(' · ');
+  if (dormStr) html += row('Dormitórios / Suítes / Banheiros', dormStr);
+  if (q.vagas) html += row('Vagas', q.vagas);
+  if (q.area)  html += row('Área', q.area + ' m²');
+  if (q.adicionais) html += row('Adicionais', q.adicionais);
+  html += `</div>`;
+
+  // Perguntas
+  const pergRows = Q_LABELS.map((lbl, i) => q['q'+(i+1)] ? row(lbl, q['q'+(i+1)]) : '').join('');
+  if (pergRows) {
+    html += `<div style="border-top:1px solid #f3f4f6;padding-top:14px;margin-top:4px;">
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">💬 Perguntas ao Proprietário</div>
+      ${pergRows}</div>`;
+  }
+
+  // Observações editáveis
+  html += `<div style="border-top:1px solid #f3f4f6;padding-top:14px;margin-top:4px;">
+    <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">📝 Observações</div>
+    <textarea id="vdObs" rows="3" placeholder="Observações / anotações..." style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;resize:vertical;font-family:inherit;box-sizing:border-box;">${vt.observacoes || ''}</textarea>
+    <button ontouchstart="" onclick="vdSalvarObs()" style="margin-top:8px;width:100%;background:#0a1628;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">💾 Salvar observação</button>
+  </div>`;
+
+  document.getElementById('vdBody').innerHTML = html;
+  document.getElementById('visitDetailModal').style.display = 'flex';
+}
+
+function fecharDetalheVisita() {
+  document.getElementById('visitDetailModal').style.display = 'none';
+  _vdCurrentId = null;
+}
+
+async function vdSetStatus(status) {
+  if (!_vdCurrentId) return;
+  if (status === 'follow_up') {
+    fecharDetalheVisita();
+    setTimeout(() => setStatus(_vdCurrentId, 'follow_up'), 200);
+    return;
+  }
+  await supa.from('visits').update({ status, followup_date: null }).eq('id', _vdCurrentId);
+  fecharDetalheVisita();
+  showToast('✅ Status atualizado!');
+  loadHistory();
+}
+
+async function vdSalvarObs() {
+  if (!_vdCurrentId) return;
+  const obs = document.getElementById('vdObs')?.value || '';
+  await supa.from('visits').update({ observacoes: obs }).eq('id', _vdCurrentId);
+  showToast('✅ Observação salva!');
 }
 
 function toggleCCard(id) {
