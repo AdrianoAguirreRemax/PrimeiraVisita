@@ -653,11 +653,25 @@
     <!-- Legenda flutuante -->
     <div style="position:absolute;bottom:8px;left:8px;z-index:500;background:rgba(255,255,255,0.92);backdrop-filter:blur(4px);border-radius:8px;padding:5px 9px;display:flex;flex-direction:column;gap:3px;font-size:11px;box-shadow:0 1px 4px rgba(0,0,0,0.15);">
       <div style="display:flex;align-items:center;gap:5px;color:#374151;font-weight:600;">
-        <svg width="12" height="15" viewBox="0 0 36 44"><path d="M18 2 C8 2 1 9 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9 27 2 18 2 Z" fill="#cc0000"/></svg>
+        <svg width="11" height="14" viewBox="0 0 36 44">
+          <path d="M18 2 C8 2 1 9 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9 27 2 18 2 Z" fill="white" stroke="#cc0000" stroke-width="2"/>
+          <rect x="1" y="2" width="17" height="20" fill="#7f1d1d" clip-path="url(#lc1)"/>
+          <rect x="18" y="2" width="17" height="20" fill="#cc0000" clip-path="url(#lc1)"/>
+          <rect x="1" y="24" width="17" height="20" fill="#1e3a5f" clip-path="url(#lc1)"/>
+          <rect x="18" y="24" width="17" height="20" fill="#2563eb" clip-path="url(#lc1)"/>
+          <clipPath id="lc1"><path d="M18 2 C8 2 1 9 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9 27 2 18 2 Z"/></clipPath>
+        </svg>
         Prospectos
       </div>
       <div style="display:flex;align-items:center;gap:5px;color:#374151;font-weight:600;">
-        <svg width="12" height="15" viewBox="0 0 30 38"><path d="M15 1 C7 1 1 7 1 14.5 C1 24 15 36 15 36 C15 36 29 24 29 14.5 C29 7 23 1 15 1 Z" fill="#15803d"/></svg>
+        <svg width="11" height="14" viewBox="0 0 36 44">
+          <path d="M18 2 C8 2 1 9 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9 27 2 18 2 Z" fill="white" stroke="#15803d" stroke-width="2"/>
+          <rect x="1" y="2" width="17" height="20" fill="#14532d" clip-path="url(#lc2)"/>
+          <rect x="18" y="2" width="17" height="20" fill="#15803d" clip-path="url(#lc2)"/>
+          <rect x="1" y="24" width="17" height="20" fill="#1e3a5f" clip-path="url(#lc2)"/>
+          <rect x="18" y="24" width="17" height="20" fill="#2563eb" clip-path="url(#lc2)"/>
+          <clipPath id="lc2"><path d="M18 2 C8 2 1 9 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9 27 2 18 2 Z"/></clipPath>
+        </svg>
         Visitas
       </div>
     </div>
@@ -1283,7 +1297,13 @@
       <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:4px;border-bottom:2px solid #e5e7eb;">🏠 Dados do Imóvel</div>
       <div>
         <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">ENDEREÇO</label>
-        <input type="text" id="vEditEnd" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="vEditEnd" style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+          <button id="vEditBtnGPS" ontouchstart="" onclick="vEditCapturarLocalizacao()" title="Marcar no mapa" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:0 14px;font-size:20px;cursor:pointer;flex-shrink:0;touch-action:manipulation;">📍</button>
+        </div>
+        <input type="hidden" id="vEditGeoLat">
+        <input type="hidden" id="vEditGeoLng">
+        <div id="vEditGeoStatus" style="display:none;font-size:11px;color:#15803d;font-weight:600;margin-top:5px;padding:4px 8px;background:#f0fdf4;border-radius:6px;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div>
@@ -3177,6 +3197,56 @@ function toggleCCard(id) {
   }
 }
 
+// ── Captura localização no modal de edição (GPS ou geocode do endereço) ──
+async function vEditCapturarLocalizacao() {
+  const btn       = document.getElementById('vEditBtnGPS');
+  const statusEl  = document.getElementById('vEditGeoStatus');
+  btn.textContent = '⏳'; btn.disabled = true;
+
+  let lat = null, lng = null;
+
+  // 1. Tenta GPS do dispositivo
+  try {
+    await new Promise((resolve, reject) => {
+      if (!navigator.geolocation) { reject(); return; }
+      navigator.geolocation.getCurrentPosition(
+        pos => { lat = pos.coords.latitude; lng = pos.coords.longitude; resolve(); },
+        () => reject(),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    });
+  } catch(e) { /* GPS indisponível — tentará geocode */ }
+
+  // 2. Se GPS falhou, geocodifica o endereço
+  if (!lat) {
+    const end = document.getElementById('vEditEnd')?.value.trim();
+    if (!end) {
+      showToast('⚠️ Digite o endereço antes de marcar no mapa.');
+      btn.textContent = '📍'; btn.disabled = false; return;
+    }
+    try {
+      const resp = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(end + ', Santa Maria, RS')}&format=json&limit=1&countrycodes=br`,
+        { signal: _mkSignal(10000) }
+      );
+      const data = await resp.json();
+      if (data?.[0]) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
+    } catch(e) {}
+  }
+
+  if (!lat || !lng) {
+    showToast('⚠️ Não foi possível obter a localização. Verifique o endereço.');
+    btn.textContent = '📍'; btn.disabled = false; return;
+  }
+
+  document.getElementById('vEditGeoLat').value = lat;
+  document.getElementById('vEditGeoLng').value = lng;
+  statusEl.textContent = `📍 Marcado: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  statusEl.style.display = 'block';
+  btn.textContent = '✅'; btn.disabled = false;
+  showToast('📍 Localização marcada! O balão aparecerá no mapa Captar ao salvar.');
+}
+
 async function abrirEditarVisita(vid) {
   if (!supa || !currentUser) return;
   const { data, error } = await supa.from('visits').select('*').eq('id', vid).single();
@@ -3224,6 +3294,20 @@ async function abrirEditarVisita(vid) {
   const _totalFotos = Object.values(_vEditSections).reduce((n, a) => n + a.length, 0);
   const _countEl = document.getElementById('vEditPhotoCount');
   if (_countEl) _countEl.textContent = _totalFotos > 0 ? `${_totalFotos} foto(s)` : '0 fotos';
+  // Carrega coords de geolocalização existentes
+  const geoLatEl  = document.getElementById('vEditGeoLat');
+  const geoLngEl  = document.getElementById('vEditGeoLng');
+  const geoStatEl = document.getElementById('vEditGeoStatus');
+  const gpsBtnEl  = document.getElementById('vEditBtnGPS');
+  if (geoLatEl)  geoLatEl.value  = q.geo_lat  || '';
+  if (geoLngEl)  geoLngEl.value  = q.geo_lng  || '';
+  if (q.geo_lat && q.geo_lng) {
+    if (geoStatEl) { geoStatEl.textContent = `📍 Marcado: ${parseFloat(q.geo_lat).toFixed(5)}, ${parseFloat(q.geo_lng).toFixed(5)}`; geoStatEl.style.display = 'block'; }
+    if (gpsBtnEl)  gpsBtnEl.textContent = '✅';
+  } else {
+    if (geoStatEl) geoStatEl.style.display = 'none';
+    if (gpsBtnEl)  gpsBtnEl.textContent = '📍';
+  }
   document.getElementById('visitEditModal').style.display = 'flex';
 }
 
@@ -3234,6 +3318,8 @@ async function salvarVisitaEditada() {
   const fuDate = (novoStatus === 'follow_up') ? (document.getElementById('vEditFollowupDate').value || null) : null;
   if (novoStatus === 'follow_up' && !fuDate) { showToast('⚠️ Selecione a data do próximo contato.'); return; }
   const g = id => document.getElementById(id)?.value.trim() || null;
+  const _geoLat = parseFloat(document.getElementById('vEditGeoLat')?.value) || null;
+  const _geoLng = parseFloat(document.getElementById('vEditGeoLng')?.value) || null;
   const qAtualizado = {
     hora: g('vEditHora'), link_anuncio: g('vEditLink'),
     dorms: g('vEditDorms'), suites: g('vEditSuites'), banheiros: g('vEditBanh'),
@@ -3241,6 +3327,7 @@ async function salvarVisitaEditada() {
     conservacao: document.getElementById('vEditConservacao')?.value || null,
     q1: g('vEditQ1'), q2: g('vEditQ2'), q3: g('vEditQ3'), q4: g('vEditQ4'),
     q5: g('vEditQ5'), q6: g('vEditQ6'), q7: g('vEditQ7'), q8: g('vEditQ8'),
+    geo_lat: _geoLat, geo_lng: _geoLng,
   };
   // Preserva campos do questionario que não editamos (data_inicio_gestao, etc.)
   const existente = (await supa.from('visits').select('questionario').eq('id', vid).single()).data;
@@ -4445,16 +4532,23 @@ async function _renderVisitsNoMapa() {
       if (!lat || !lng) return;
 
       const vid = v.id;
+      // Balão REMAX — paleta verde (distingue visitas de prospectos no mapa)
+      const vc = { top1:'#14532d', top2:'#15803d', mid:'#f0fdf4', bot1:'#1e3a5f', bot2:'#2563eb', border:'#15803d' };
       const icon = L.divIcon({
         className: '',
-        html: `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
-          <ellipse cx="15" cy="36" rx="5" ry="2" fill="rgba(0,0,0,0.2)"/>
-          <path d="M15 1 C6.7 1 1 7.2 1 14.5 C1 24 15 36 15 36 C15 36 29 24 29 14.5 C29 7.2 23.3 1 15 1 Z" fill="#15803d" stroke="#fff" stroke-width="1.5"/>
-          <polygon points="15,7 8,16 22,16" fill="white" opacity="0.95"/>
-          <rect x="10" y="16" width="10" height="8" rx="1" fill="white" opacity="0.95"/>
-          <rect x="13" y="19" width="4" height="5" fill="#15803d"/>
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="44" viewBox="0 0 36 44">
+          <defs><clipPath id="vpin-${vid}"><path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z"/></clipPath></defs>
+          <ellipse cx="18" cy="42" rx="6" ry="2" fill="rgba(0,0,0,0.25)"/>
+          <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z" fill="white" stroke="${vc.border}" stroke-width="1.5"/>
+          <rect x="1" y="2" width="17" height="20" fill="${vc.top1}" clip-path="url(#vpin-${vid})"/>
+          <rect x="18" y="2" width="17" height="20" fill="${vc.top2}" clip-path="url(#vpin-${vid})"/>
+          <rect x="1" y="17" width="34" height="7" fill="${vc.mid}" clip-path="url(#vpin-${vid})"/>
+          <rect x="1" y="24" width="17" height="20" fill="${vc.bot1}" clip-path="url(#vpin-${vid})"/>
+          <rect x="18" y="24" width="17" height="20" fill="${vc.bot2}" clip-path="url(#vpin-${vid})"/>
+          <line x1="18" y1="2" x2="18" y2="42" stroke="white" stroke-width="1" opacity="0.6" clip-path="url(#vpin-${vid})"/>
+          <path d="M18 2 C8.06 2 1 9.06 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9.06 27.94 2 18 2 Z" fill="none" stroke="white" stroke-width="2.5"/>
         </svg>`,
-        iconSize: [30, 38], iconAnchor: [15, 36], popupAnchor: [0, -38]
+        iconSize: [36, 44], iconAnchor: [18, 42], popupAnchor: [0, -44]
       });
 
       const dataFmt = v.data_visita
