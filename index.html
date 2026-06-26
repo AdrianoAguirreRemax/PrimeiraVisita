@@ -2532,8 +2532,10 @@ async function buildVisitObject() {
   const enderecoDigitado = nv('imovel');
   if (enderecoDigitado) {
     try {
+      const jaTemSM2 = /santa\s*maria/i.test(enderecoDigitado);
+      const geoQuery = jaTemSM2 ? enderecoDigitado : (enderecoDigitado + ', Santa Maria, RS');
       const geoResp = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(enderecoDigitado + ', Santa Maria, RS')}&format=json&limit=1&countrycodes=br`,
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(geoQuery)}&format=json&limit=1&countrycodes=br&viewbox=-54.05,-29.50,-53.55,-29.90&bounded=0`,
         { signal: _mkSignal(8000) }
       );
       const geoData = await geoResp.json();
@@ -3199,31 +3201,44 @@ function toggleCCard(id) {
 async function vEditCapturarLocalizacao() {
   const btn      = document.getElementById('vEditBtnGPS');
   const statusEl = document.getElementById('vEditGeoStatus');
-  const end      = document.getElementById('vEditEnd')?.value.trim();
-  if (!end) { showToast('⚠️ Preencha o endereço antes de marcar no mapa.'); return; }
+  const endRaw   = document.getElementById('vEditEnd')?.value.trim();
+  if (!endRaw) { showToast('⚠️ Preencha o endereço antes de marcar no mapa.'); return; }
   btn.textContent = '⏳'; btn.disabled = true;
 
-  let lat = null, lng = null;
+  // Normaliza o endereço: remove "Santa Maria" duplicado antes de acrescentar
+  const jaTemSM = /santa\s*maria/i.test(endRaw);
+  const query = jaTemSM ? endRaw : (endRaw + ', Santa Maria, RS');
+
+  let lat = null, lng = null, erroMsg = '';
   try {
-    const resp = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(end + ', Santa Maria, RS')}&format=json&limit=1&countrycodes=br`,
-      { signal: _mkSignal(12000) }
-    );
-    const data = await resp.json();
-    if (data?.[0]) { lat = parseFloat(data[0].lat); lng = parseFloat(data[0].lon); }
-  } catch(e) {}
+    // Primeira tentativa: endereço completo com viewbox de Santa Maria
+    const url1 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=br&viewbox=-54.05,-29.50,-53.55,-29.90&bounded=0`;
+    const r1 = await fetch(url1, { signal: _mkSignal(10000) });
+    const d1 = await r1.json();
+    if (d1?.[0]) { lat = parseFloat(d1[0].lat); lng = parseFloat(d1[0].lon); }
+
+    // Segunda tentativa: apenas rua + número (remove bairro/cidade se o primeiro falhou)
+    if (!lat) {
+      const partes = endRaw.split(',');
+      const curto  = partes.slice(0, 2).join(',').trim() + ', Santa Maria, RS';
+      const url2 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(curto)}&format=json&limit=1&countrycodes=br`;
+      const r2 = await fetch(url2, { signal: _mkSignal(10000) });
+      const d2 = await r2.json();
+      if (d2?.[0]) { lat = parseFloat(d2[0].lat); lng = parseFloat(d2[0].lon); }
+    }
+  } catch(e) { erroMsg = e.message || 'erro de rede'; }
 
   if (!lat || !lng) {
-    showToast('⚠️ Endereço não encontrado. Tente colocar só rua e número.');
+    showToast('⚠️ Endereço não encontrado' + (erroMsg ? ': ' + erroMsg : '. Tente só rua e número.'));
     btn.textContent = '📍'; btn.disabled = false; return;
   }
 
   document.getElementById('vEditGeoLat').value = lat;
   document.getElementById('vEditGeoLng').value = lng;
-  statusEl.textContent = `📍 Marcado: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+  statusEl.textContent = `📍 Localizado: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
   statusEl.style.display = 'block';
   btn.textContent = '✅'; btn.disabled = false;
-  showToast('📍 Localização do imóvel marcada! Aparecerá no mapa Captar ao salvar.');
+  showToast('📍 Endereço localizado! Salve para aparecer no mapa Captar.');
 }
 
 async function abrirEditarVisita(vid) {
@@ -3337,6 +3352,8 @@ async function salvarVisitaEditada() {
   document.getElementById('visitEditModal').style.display = 'none';
   showToast('✅ Visita atualizada!');
   loadHistory();
+  // Atualiza marcadores no mapa Captar se estiver aberto
+  if (_captarMap) _renderVisitsNoMapa();
 }
 
 async function setStatus(id, status) {
