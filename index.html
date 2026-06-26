@@ -1726,7 +1726,7 @@ async function _fetchHtml(pageUrl) {
   ];
   for (const px of proxies) {
     try {
-      const resp = await fetch(px, { signal: AbortSignal.timeout(20000) });
+      const resp = await fetch(px, { signal: _mkSignal(20000) });
       if (!resp.ok) continue;
       const ct = resp.headers.get('content-type') || '';
       if (ct.includes('json')) {
@@ -1746,7 +1746,7 @@ async function _fetchImagem(imgUrl) {
   const proxies = [weserv, 'https://corsproxy.io/?url=' + encodeURIComponent(imgUrl), 'https://api.allorigins.win/raw?url=' + encodeURIComponent(imgUrl)];
   for (const px of proxies) {
     try {
-      const ir = await fetch(px, { signal: AbortSignal.timeout(12000) });
+      const ir = await fetch(px, { signal: _mkSignal(12000) });
       if (!ir.ok) continue;
       const blob = await ir.blob();
       if ((blob.type.startsWith('image/') || blob.size > 3000) && blob.size > 2000) return blob;
@@ -1849,7 +1849,7 @@ async function buscarFotosDoLink() {
     ];
     for (const px of proxies) {
       try {
-        const resp = await fetch(px, { signal: AbortSignal.timeout(20000) });
+        const resp = await fetch(px, { signal: _mkSignal(20000) });
         if (!resp.ok) continue;
         const ct = resp.headers.get('content-type') || '';
         if (ct.includes('json')) {
@@ -1877,7 +1877,7 @@ async function buscarFotosDoLink() {
     ];
     for (const px of proxies) {
       try {
-        const ir = await fetch(px, { signal: AbortSignal.timeout(12000) });
+        const ir = await fetch(px, { signal: _mkSignal(12000) });
         if (!ir.ok) continue;
         const blob = await ir.blob();
         if ((blob.type.startsWith('image/') || blob.size > 3000) && blob.size > 2000) return blob;
@@ -2009,13 +2009,13 @@ async function buscarFotosEditModal() {
   }
   async function _fHtml(pageUrl) {
     const px = ['https://api.allorigins.win/get?url='+encodeURIComponent(pageUrl), 'https://corsproxy.io/?url='+encodeURIComponent(pageUrl)];
-    for (const p of px) { try { const r=await fetch(p,{signal:AbortSignal.timeout(20000)}); if(!r.ok) continue; const ct=r.headers.get('content-type')||''; if(ct.includes('json')){const j=await r.json();const h=j.contents||j.html||'';if(h.length>500)return h;}else{const h=await r.text();if(h.length>500)return h;} } catch(e){} }
+    for (const p of px) { try { const r=await fetch(p,{signal:_mkSignal(20000)}); if(!r.ok) continue; const ct=r.headers.get('content-type')||''; if(ct.includes('json')){const j=await r.json();const h=j.contents||j.html||'';if(h.length>500)return h;}else{const h=await r.text();if(h.length>500)return h;} } catch(e){} }
     return '';
   }
   async function _fImg(imgUrl) {
     const wv='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=1200&output=jpg&il';
     const px=[wv,'https://corsproxy.io/?url='+encodeURIComponent(imgUrl),'https://api.allorigins.win/raw?url='+encodeURIComponent(imgUrl)];
-    for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(12000)});if(!r.ok)continue;const b=await r.blob();if((b.type.startsWith('image/')||b.size>3000)&&b.size>2000)return b;}catch(e){}}
+    for(const p of px){try{const r=await fetch(p,{signal:_mkSignal(12000)});if(!r.ok)continue;const b=await r.blob();if((b.type.startsWith('image/')||b.size>3000)&&b.size>2000)return b;}catch(e){}}
     return null;
   }
 
@@ -2184,13 +2184,13 @@ async function buscarFotosEP() {
       'https://corsproxy.io/?url='+encodeURIComponent(pageUrl),
       'https://r.jina.ai/'+pageUrl,
     ];
-    for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(20000)});if(!r.ok)continue;const ct=r.headers.get('content-type')||'';if(ct.includes('json')){const j=await r.json();const h=j.contents||j.html||'';if(h.length>500)return h;}else{const h=await r.text();if(h.length>500)return h;}}catch(e){}}
+    for(const p of px){try{const r=await fetch(p,{signal:_mkSignal(20000)});if(!r.ok)continue;const ct=r.headers.get('content-type')||'';if(ct.includes('json')){const j=await r.json();const h=j.contents||j.html||'';if(h.length>500)return h;}else{const h=await r.text();if(h.length>500)return h;}}catch(e){}}
     return '';
   }
   async function _epFetchImg(imgUrl) {
     const wv='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=1200&output=jpg&il';
     const px=[wv,'https://corsproxy.io/?url='+encodeURIComponent(imgUrl),'https://api.allorigins.win/raw?url='+encodeURIComponent(imgUrl)];
-    for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(12000)});if(!r.ok)continue;const b=await r.blob();if((b.type.startsWith('image/')||b.size>3000)&&b.size>2000)return b;}catch(e){}}
+    for(const p of px){try{const r=await fetch(p,{signal:_mkSignal(12000)});if(!r.ok)continue;const b=await r.blob();if((b.type.startsWith('image/')||b.size>3000)&&b.size>2000)return b;}catch(e){}}
     return null;
   }
   // ───────────────────────────────────────────
@@ -2279,7 +2279,7 @@ async function buscarLocalizacao() {
         // Nominatim (OpenStreetMap) — zoom=18 = máxima precisão de rua
         const resp = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&zoom=18&addressdetails=1&accept-language=pt`,
-          { signal: AbortSignal.timeout(12000) }
+          { signal: _mkSignal(12000) }
         );
         const d = await resp.json();
         const a = d.address || {};
@@ -3399,8 +3399,8 @@ const BAIRROS_SM = [
 ];
 
 // Centro do Bairro Nossa Sra. das Dores — Santa Maria - RS
-const DORES_LAT = -29.6910;
-const DORES_LNG = -53.8055;
+const DORES_LAT = -29.6901;
+const DORES_LNG = -53.7920;
 const DORES_ZOOM = 15;
 
 let _captarMap = null;
@@ -3408,29 +3408,79 @@ let _captarMarkers = {}; // id → marker
 let _doresLayer  = null; // polígono do bairro principal
 let _bairrosLayers = {}; // id → círculo dos demais bairros
 
-// Polígono do Bairro Nossa Sra. das Dores
-// Extraído da imagem Google Maps enviada pelo usuário.
-// Referência de calibração: Royal Plaza Shopping = (-29.6907°, -53.8079°)
-// Traçado seguindo a linha pontilhada vermelha/branca da demarcação.
-const DORES_POLY_COORDS = [
-  [-29.6860, -53.8125], // NW — R. Araripe Júnior / R. Machado de Assis
-  [-29.6813, -53.8089], // N  — subindo pela R. Abreu Antônio Coelho
-  [-29.6808, -53.8055], // N  — topo central (R. Srg. Floriano Carrion)
-  [-29.6852, -53.7989], // NE — virando para leste (Hospital da Brigada Militar)
-  [-29.6885, -53.7972], // E  — lado direito superior
-  [-29.6913, -53.7978], // E  — lado direito central
-  [-29.7002, -53.8010], // SE — descendo (Escola Mater / R. Alfredo Preigchadt)
-  [-29.7010, -53.8037], // S  — fundo direito
-  [-29.7008, -53.8076], // S  — fundo central (próx. Hospital São Francisco)
-  [-29.6984, -53.8135], // SW — fundo esquerdo
-  [-29.6961, -53.8135], // W  — lado esquerdo (R. Gen. Neto)
-  [-29.6860, -53.8125], // volta ao NW
-];
+// Polígono REAL do Bairro Nossa Sra. das Dores — fonte: OpenStreetMap relation 3481534
+// GeoJSON nativo [lng, lat] — usado com L.geoJSON (não precisa converter)
+const DORES_GEOJSON = {"type":"Polygon","coordinates":[[
+  [-53.8005118,-29.6903612],[-53.8004842,-29.6903949],[-53.8004473,-29.6904398],
+  [-53.8001012,-29.6907785],[-53.7999759,-29.6909011],[-53.7997781,-29.6910946],
+  [-53.7996739,-29.6911966],[-53.7996099,-29.6912592],[-53.7994357,-29.6914297],
+  [-53.7986583,-29.6921866],[-53.798633,-29.6922112],[-53.798425,-29.6924138],
+  [-53.7981829,-29.6926495],[-53.7980822,-29.6928287],[-53.7978369,-29.693265],
+  [-53.797684,-29.6935369],[-53.7975296,-29.6938154],[-53.7974214,-29.6940041],
+  [-53.7973977,-29.6940463],[-53.7972343,-29.694337],[-53.7971812,-29.6944315],
+  [-53.7970826,-29.6946069],[-53.7970755,-29.6946333],[-53.7970213,-29.6948345],
+  [-53.7969766,-29.6948311],[-53.7962491,-29.6947755],[-53.7960657,-29.6947272],
+  [-53.7958739,-29.6946582],[-53.7957575,-29.6946088],[-53.7955816,-29.6945117],
+  [-53.7954159,-29.6943922],[-53.7951222,-29.6941768],[-53.7948959,-29.693988],
+  [-53.7947181,-29.6938362],[-53.7946576,-29.6937523],[-53.7945522,-29.6935852],
+  [-53.7938568,-29.6938814],[-53.7932423,-29.6941803],[-53.7928872,-29.6942368],
+  [-53.7924371,-29.6942716],[-53.7921589,-29.6943103],[-53.7919637,-29.6944096],
+  [-53.7918805,-29.6944225],[-53.7917686,-29.6944398],[-53.7910567,-29.694832],
+  [-53.7909601,-29.6948232],[-53.7901367,-29.6929163],[-53.7894786,-29.6919525],
+  [-53.7892135,-29.6920871],[-53.7891445,-29.6921194],[-53.7889481,-29.6922112],
+  [-53.7886717,-29.6923142],[-53.7883563,-29.6923901],[-53.7880083,-29.6924281],
+  [-53.7879447,-29.6925014],[-53.787876,-29.6925805],[-53.7875697,-29.6929333],
+  [-53.7871005,-29.6934736],[-53.7869305,-29.6936569],[-53.7867524,-29.6938132],
+  [-53.7864051,-29.6941179],[-53.7856883,-29.6947467],[-53.785556,-29.6948628],
+  [-53.785519,-29.6948796],[-53.7853901,-29.6949382],[-53.7851101,-29.6951415],
+  [-53.784838,-29.695033],[-53.7843165,-29.6943721],[-53.7838083,-29.6937118],
+  [-53.7837285,-29.6936082],[-53.7834412,-29.6932349],[-53.7834126,-29.6931978],
+  [-53.7843657,-29.6928903],[-53.7847026,-29.692778],[-53.7851196,-29.692656],
+  [-53.785393,-29.6925876],[-53.7856733,-29.692529],[-53.7858452,-29.6924933],
+  [-53.7858179,-29.6924588],[-53.7857332,-29.6923578],[-53.7851806,-29.6916513],
+  [-53.7848751,-29.6912642],[-53.784762,-29.6912034],[-53.784174,-29.6908768],
+  [-53.7837372,-29.6902318],[-53.7837112,-29.6901934],[-53.7839143,-29.6900882],
+  [-53.7842446,-29.6899062],[-53.7843283,-29.6898613],[-53.7844315,-29.6898119],
+  [-53.7845364,-29.6897755],[-53.7840656,-29.6893441],[-53.7847666,-29.6887528],
+  [-53.7851125,-29.6884696],[-53.7861209,-29.6879415],[-53.7865013,-29.6877423],
+  [-53.7872359,-29.6873859],[-53.7879204,-29.6869991],[-53.7881111,-29.6870366],
+  [-53.7885059,-29.6867609],[-53.788858,-29.6865032],[-53.7888417,-29.6864715],
+  [-53.7888456,-29.6864356],[-53.7888929,-29.6863669],[-53.7904678,-29.6864556],
+  [-53.7912311,-29.6864968],[-53.7920736,-29.6865463],[-53.7924594,-29.686629],
+  [-53.7925079,-29.6866393],[-53.7925703,-29.6866527],[-53.7926002,-29.6860155],
+  [-53.7926144,-29.6857138],[-53.7926189,-29.6856167],[-53.7926544,-29.6856179],
+  [-53.7940851,-29.6855885],[-53.7941535,-29.6852809],[-53.7945958,-29.68529],
+  [-53.7946489,-29.6850559],[-53.7947388,-29.6850732],[-53.7947334,-29.6851206],
+  [-53.7947628,-29.6851258],[-53.7948016,-29.6851292],[-53.7948588,-29.6850881],
+  [-53.7951429,-29.6851406],[-53.7950448,-29.6855758],[-53.7950235,-29.6856945],
+  [-53.7950847,-29.6860664],[-53.795534,-29.686135],[-53.7953998,-29.6866552],
+  [-53.795631,-29.6868136],[-53.796001,-29.6868857],[-53.7962055,-29.6869198],
+  [-53.7964007,-29.6869655],[-53.7966152,-29.6870074],[-53.796704,-29.6870211],
+  [-53.7967636,-29.687034],[-53.79684,-29.6870687],[-53.7970156,-29.6873846],
+  [-53.7968644,-29.6874375],[-53.7969095,-29.6875432],[-53.797064,-29.6878126],
+  [-53.7970835,-29.6878501],[-53.7971128,-29.6879024],[-53.7971627,-29.6878836],
+  [-53.7976069,-29.6877189],[-53.7979138,-29.6875762],[-53.7980077,-29.6875424],
+  [-53.7981176,-29.6875186],[-53.7982586,-29.6875169],[-53.7983543,-29.6875226],
+  [-53.7984623,-29.6875477],[-53.7988036,-29.6877061],[-53.7993914,-29.6879832],
+  [-53.8001089,-29.6883224],[-53.8001425,-29.6883383],[-53.8000474,-29.6884858],
+  [-53.7997207,-29.6889924],[-53.7994058,-29.6894807],[-53.7993764,-29.6895262],
+  [-53.799837,-29.6898549],[-53.8004325,-29.6903017],[-53.8005118,-29.6903612]
+]]};
+
+// Helper cross-browser: AbortSignal.timeout não existe no iOS Safari < 16.4
+function _mkSignal(ms) {
+  if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+    return AbortSignal.timeout(ms);
+  }
+  const c = new AbortController();
+  setTimeout(() => c.abort(), ms);
+  return c.signal;
+}
 
 function _desenharPoligonoFallback(skipFitBounds = false) {
   if (_doresLayer) return;
-  _doresLayer = L.polygon(DORES_POLY_COORDS, {
-    color: '#cc0000', fillColor: '#cc0000', fillOpacity: 0.08, weight: 2.5, dashArray: '7,5'
+  _doresLayer = L.geoJSON(DORES_GEOJSON, {
+    style: { color: '#cc0000', fillColor: '#cc0000', fillOpacity: 0.08, weight: 2.5, dashArray: '7,5' }
   }).addTo(_captarMap);
   _doresLayer.bindTooltip('Nossa Senhora das Dores', {
     permanent: true, direction: 'center', className: 'leaflet-bairro-label'
@@ -3454,7 +3504,7 @@ out geom;`;
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'data=' + encodeURIComponent(q),
-      signal: AbortSignal.timeout(18000)
+      signal: _mkSignal(18000)
     });
     if (resp.ok) {
       const data = await resp.json();
@@ -3485,7 +3535,7 @@ out geom;`;
     for (const q of ['Nossa+Senhora+das+Dores,+Santa+Maria,+RS','Bairro+Dores,+Santa+Maria,+RS']) {
       const resp = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=3&polygon_geojson=1&countrycodes=br`,
-        { signal: AbortSignal.timeout(10000) }
+        { signal: _mkSignal(10000) }
       );
       if (!resp.ok) continue;
       const data = await resp.json();
@@ -3619,7 +3669,7 @@ out geom;`;
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'data=' + encodeURIComponent(q),
-      signal: AbortSignal.timeout(14000)
+      signal: _mkSignal(14000)
     });
     if (resp.ok) {
       const data = await resp.json();
@@ -3646,7 +3696,7 @@ out geom;`;
     const q = encodeURIComponent(`${nomeOsm}, Santa Maria, RS`);
     const resp = await fetch(
       `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&polygon_geojson=1&countrycodes=br&viewbox=-53.97,-29.82,-53.68,-29.58&bounded=1`,
-      { headers: { 'User-Agent': 'REMAX-PrimeiraVisita/1.0' }, signal: AbortSignal.timeout(8000) }
+      { headers: { 'User-Agent': 'REMAX-PrimeiraVisita/1.0' }, signal: _mkSignal(8000) }
     );
     if (resp.ok) {
       const data = await resp.json();
@@ -3725,7 +3775,7 @@ async function geocodificarProspect() {
     try {
       const resp = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&countrycodes=br`,
-        { signal: AbortSignal.timeout(10000) }
+        { signal: _mkSignal(10000) }
       );
       const data = await resp.json();
       if (data.length) {
@@ -3911,7 +3961,7 @@ async function extrairEAdicionarProspect() {
       const q = encodeURIComponent(dados.endereco + ', Santa Maria, RS, Brasil');
       const r = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
-        { signal: AbortSignal.timeout(8000) }
+        { signal: _mkSignal(8000) }
       );
       const geo = await r.json();
       if (geo.length) {
@@ -4015,7 +4065,7 @@ async function _buscarApiZap(listingId, portal) {
   for (const ep of endpoints) {
     try {
       const resp = await fetch(ep, {
-        signal: AbortSignal.timeout(10000),
+        signal: _mkSignal(10000),
         headers: { 'Accept': 'application/json', 'x-domain': 'www.zapimoveis.com.br' }
       });
       if (!resp.ok) continue;
@@ -4079,7 +4129,7 @@ async function _buscarViaProxy(url) {
   let html = '';
   for (const px of proxies) {
     try {
-      const resp = await fetch(px, { signal: AbortSignal.timeout(15000) });
+      const resp = await fetch(px, { signal: _mkSignal(15000) });
       if (!resp.ok) continue;
       const ct = resp.headers.get('content-type') || '';
       html = ct.includes('json') ? ((await resp.json()).contents || '') : await resp.text();
