@@ -1722,7 +1722,7 @@ function _extrairImagensDoHtml(html) {
 async function _fetchHtml(pageUrl) {
   const proxies = [
     'https://api.allorigins.win/get?url=' + encodeURIComponent(pageUrl),
-    'https://corsproxy.io/?' + encodeURIComponent(pageUrl),
+    'https://corsproxy.io/?url=' + encodeURIComponent(pageUrl),
   ];
   for (const px of proxies) {
     try {
@@ -1743,7 +1743,7 @@ async function _fetchHtml(pageUrl) {
 }
 async function _fetchImagem(imgUrl) {
   const weserv = 'https://images.weserv.nl/?url=' + encodeURIComponent(imgUrl.replace(/^https?:\/\//, '')) + '&w=1200&output=jpg&il';
-  const proxies = [weserv, 'https://corsproxy.io/?' + encodeURIComponent(imgUrl), 'https://api.allorigins.win/raw?url=' + encodeURIComponent(imgUrl)];
+  const proxies = [weserv, 'https://corsproxy.io/?url=' + encodeURIComponent(imgUrl), 'https://api.allorigins.win/raw?url=' + encodeURIComponent(imgUrl)];
   for (const px of proxies) {
     try {
       const ir = await fetch(px, { signal: AbortSignal.timeout(12000) });
@@ -1819,14 +1819,33 @@ async function buscarFotosDoLink() {
       if (!u.match(/icon|logo|avatar|sprite|pixel|map/i) && u.length > 35) imgUrls.add(u);
       if (imgUrls.size >= 20) break;
     }
+    // 6. Links de imagem em Markdown — retorno do Jina.ai (renderiza JS)
+    for (const m of html.matchAll(/!\[.*?\]\((https?:[^)]+\.(?:jpg|jpeg|png|webp)[^)]{0,80})\)/gi)) {
+      const u = m[1];
+      if (!u.match(/icon|logo|avatar|sprite|pixel|map/i) && u.length > 35) imgUrls.add(u);
+      if (imgUrls.size >= 20) break;
+    }
     return imgUrls;
   }
 
-  // ── Tenta buscar a página via dois proxies em sequência ──
+  // Expande URLs com padrão sequencial -1.jpg,-2.jpg... (ex: chavesnamao.com.br)
+  function enumerarSequencial(set) {
+    for (const u of [...set]) {
+      const m = u.match(/^(.*?)[-_](\d{1,2})\.(jpg|jpeg|png|webp)(\?.*)?$/i);
+      if (m && parseInt(m[2]) <= 3) {
+        const [, base, , ext, qs = ''] = m;
+        for (let i = 1; i <= 20; i++) set.add(`${base}-${i}.${ext}${qs}`);
+        return;
+      }
+    }
+  }
+
+  // ── Tenta buscar a página via proxies em sequência ──
   async function fetchHtml(pageUrl) {
     const proxies = [
       'https://api.allorigins.win/get?url=' + encodeURIComponent(pageUrl),
-      'https://corsproxy.io/?' + encodeURIComponent(pageUrl),
+      'https://corsproxy.io/?url=' + encodeURIComponent(pageUrl),
+      'https://r.jina.ai/' + pageUrl,  // renderiza JS — fallback para sites React/Next.js
     ];
     for (const px of proxies) {
       try {
@@ -1853,7 +1872,7 @@ async function buscarFotosDoLink() {
     const weserv = 'https://images.weserv.nl/?url=' + encodeURIComponent(imgUrl.replace(/^https?:\/\//, '')) + '&w=1200&output=jpg&il';
     const proxies = [
       weserv,
-      'https://corsproxy.io/?' + encodeURIComponent(imgUrl),
+      'https://corsproxy.io/?url=' + encodeURIComponent(imgUrl),
       'https://api.allorigins.win/raw?url=' + encodeURIComponent(imgUrl),
     ];
     for (const px of proxies) {
@@ -1875,7 +1894,8 @@ async function buscarFotosDoLink() {
     }
 
     const imgUrls = extrairImagensDoHtml(html);
-    const urls = [...imgUrls].slice(0, 15);
+    enumerarSequencial(imgUrls);  // expande séries -1.jpg -2.jpg... (chavesnamao, etc.)
+    const urls = [...imgUrls].slice(0, 25);
 
     if (!urls.length) {
       showToast('⚠️ Site não compartilhou fotos via link. Adicione pela galeria.');
@@ -1892,7 +1912,7 @@ async function buscarFotosDoLink() {
       savePhoto(src, 'interiores', '');
       count++;
       showToast(`📥 ${count} foto(s) importada(s)...`);
-      if (count >= 10) break;
+      if (count >= 12) break;
     }
 
     if (count > 0) showToast(`✅ ${count} foto(s) importada(s) do anúncio!`);
@@ -1988,13 +2008,13 @@ async function buscarFotosEditModal() {
     return s;
   }
   async function _fHtml(pageUrl) {
-    const px = ['https://api.allorigins.win/get?url='+encodeURIComponent(pageUrl), 'https://corsproxy.io/?'+encodeURIComponent(pageUrl)];
+    const px = ['https://api.allorigins.win/get?url='+encodeURIComponent(pageUrl), 'https://corsproxy.io/?url='+encodeURIComponent(pageUrl)];
     for (const p of px) { try { const r=await fetch(p,{signal:AbortSignal.timeout(20000)}); if(!r.ok) continue; const ct=r.headers.get('content-type')||''; if(ct.includes('json')){const j=await r.json();const h=j.contents||j.html||'';if(h.length>500)return h;}else{const h=await r.text();if(h.length>500)return h;} } catch(e){} }
     return '';
   }
   async function _fImg(imgUrl) {
     const wv='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=1200&output=jpg&il';
-    const px=[wv,'https://corsproxy.io/?'+encodeURIComponent(imgUrl),'https://api.allorigins.win/raw?url='+encodeURIComponent(imgUrl)];
+    const px=[wv,'https://corsproxy.io/?url='+encodeURIComponent(imgUrl),'https://api.allorigins.win/raw?url='+encodeURIComponent(imgUrl)];
     for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(12000)});if(!r.ok)continue;const b=await r.blob();if((b.type.startsWith('image/')||b.size>3000)&&b.size>2000)return b;}catch(e){}}
     return null;
   }
@@ -2143,16 +2163,33 @@ async function buscarFotosEP() {
     for (const m of html.matchAll(/"(?:url|src|image|photo|foto|imageUrl|image_url)"\s*:\s*"(https?:[^"\\]+\.(?:jpg|jpeg|png|webp)[^"\\]{0,120})"/gi)) { const u=m[1]; if(!u.match(/icon|logo|avatar|sprite/i)){s.add(u);if(s.size>=20)break;} }
     if (s.size >= 3) return s;
     for (const m of html.matchAll(/(?:data-src|data-lazy-src|data-original|src)=["'](https?:[^"']+\.(?:jpg|jpeg|png|webp)[^"']{0,80})["']/gi)) { const u=m[1]; if(!u.match(/icon|logo|avatar|sprite|pixel|map/i)&&u.length>35) s.add(u); if(s.size>=20) break; }
+    // Markdown image links — retorno do Jina.ai
+    for (const m of html.matchAll(/!\[.*?\]\((https?:[^)]+\.(?:jpg|jpeg|png|webp)[^)]{0,80})\)/gi)) { const u=m[1]; if(!u.match(/icon|logo|avatar|sprite|pixel|map/i)&&u.length>35) s.add(u); if(s.size>=20) break; }
     return s;
   }
+  // Expande série sequencial -1.jpg,-2.jpg,... (ex: chavesnamao.com.br)
+  function _epEnumSeq(set) {
+    for (const u of [...set]) {
+      const m = u.match(/^(.*?)[-_](\d{1,2})\.(jpg|jpeg|png|webp)(\?.*)?$/i);
+      if (m && parseInt(m[2]) <= 3) {
+        const [, base, , ext, qs = ''] = m;
+        for (let i = 1; i <= 20; i++) set.add(`${base}-${i}.${ext}${qs}`);
+        return;
+      }
+    }
+  }
   async function _epFetchHtml(pageUrl) {
-    const px=['https://api.allorigins.win/get?url='+encodeURIComponent(pageUrl),'https://corsproxy.io/?'+encodeURIComponent(pageUrl)];
+    const px=[
+      'https://api.allorigins.win/get?url='+encodeURIComponent(pageUrl),
+      'https://corsproxy.io/?url='+encodeURIComponent(pageUrl),
+      'https://r.jina.ai/'+pageUrl,
+    ];
     for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(20000)});if(!r.ok)continue;const ct=r.headers.get('content-type')||'';if(ct.includes('json')){const j=await r.json();const h=j.contents||j.html||'';if(h.length>500)return h;}else{const h=await r.text();if(h.length>500)return h;}}catch(e){}}
     return '';
   }
   async function _epFetchImg(imgUrl) {
     const wv='https://images.weserv.nl/?url='+encodeURIComponent(imgUrl.replace(/^https?:\/\//,''))+'&w=1200&output=jpg&il';
-    const px=[wv,'https://corsproxy.io/?'+encodeURIComponent(imgUrl),'https://api.allorigins.win/raw?url='+encodeURIComponent(imgUrl)];
+    const px=[wv,'https://corsproxy.io/?url='+encodeURIComponent(imgUrl),'https://api.allorigins.win/raw?url='+encodeURIComponent(imgUrl)];
     for(const p of px){try{const r=await fetch(p,{signal:AbortSignal.timeout(12000)});if(!r.ok)continue;const b=await r.blob();if((b.type.startsWith('image/')||b.size>3000)&&b.size>2000)return b;}catch(e){}}
     return null;
   }
@@ -2166,7 +2203,8 @@ async function buscarFotosEP() {
       return;
     }
     const imgUrls = _epExtrairImgs(html);
-    const urls = [...imgUrls].slice(0, 15);
+    _epEnumSeq(imgUrls);  // expande séries -1.jpg -2.jpg... (chavesnamao, etc.)
+    const urls = [...imgUrls].slice(0, 25);
     if (!urls.length) {
       showToast('⚠️ Site não compartilhou fotos via link. Adicione pela galeria.');
       if (btn) { btn.disabled = false; btn.textContent = '📷 Buscar'; }
@@ -4036,7 +4074,7 @@ async function _buscarViaProxy(url) {
   const proxies = [
     'https://api.allorigins.win/get?url=' + encodeURIComponent(url),
     'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(url),
-    'https://corsproxy.io/?' + encodeURIComponent(url),
+    'https://corsproxy.io/?url=' + encodeURIComponent(url),
   ];
   let html = '';
   for (const px of proxies) {
