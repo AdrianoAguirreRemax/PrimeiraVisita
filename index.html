@@ -648,7 +648,20 @@
   </div>
 
   <!-- Mapa -->
-  <div id="captarMap" style="height:280px;flex-shrink:0;z-index:1;"></div>
+  <div style="position:relative;flex-shrink:0;">
+    <div id="captarMap" style="height:280px;width:100%;z-index:1;"></div>
+    <!-- Legenda flutuante -->
+    <div style="position:absolute;bottom:8px;left:8px;z-index:500;background:rgba(255,255,255,0.92);backdrop-filter:blur(4px);border-radius:8px;padding:5px 9px;display:flex;flex-direction:column;gap:3px;font-size:11px;box-shadow:0 1px 4px rgba(0,0,0,0.15);">
+      <div style="display:flex;align-items:center;gap:5px;color:#374151;font-weight:600;">
+        <svg width="12" height="15" viewBox="0 0 36 44"><path d="M18 2 C8 2 1 9 1 19 C1 30 18 42 18 42 C18 42 35 30 35 19 C35 9 27 2 18 2 Z" fill="#cc0000"/></svg>
+        Prospectos
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;color:#374151;font-weight:600;">
+        <svg width="12" height="15" viewBox="0 0 30 38"><path d="M15 1 C7 1 1 7 1 14.5 C1 24 15 36 15 36 C15 36 29 24 29 14.5 C29 7 23 1 15 1 Z" fill="#15803d"/></svg>
+        Visitas
+      </div>
+    </div>
+  </div>
 
   <!-- ── COLAR LINK ── -->
   <div style="padding:10px 12px;background:#f0fdf4;border-bottom:2px solid #86efac;flex-shrink:0;">
@@ -2275,6 +2288,7 @@ async function buscarLocalizacao() {
   navigator.geolocation.getCurrentPosition(
     async pos => {
       const { latitude: lat, longitude: lon } = pos.coords;
+      _visitGeoLat = lat; _visitGeoLng = lon; // salva para o buildVisitObject
       try {
         // Nominatim (OpenStreetMap) — zoom=18 = máxima precisão de rua
         const resp = await fetch(
@@ -2494,12 +2508,30 @@ async function buildVisitObject() {
     if (fotoCount >= 8) break;
   }
 
+  // ── Geocodificação: usa GPS capturado ou geocodifica o endereço ──
+  let geoLat = _visitGeoLat, geoLng = _visitGeoLng;
+  _visitGeoLat = null; _visitGeoLng = null; // consome e limpa
+  const enderecoDigitado = nv('imovel');
+  if (!geoLat && enderecoDigitado) {
+    try {
+      const geoResp = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(enderecoDigitado + ', Santa Maria, RS')}&format=json&limit=1&countrycodes=br`,
+        { signal: _mkSignal(8000) }
+      );
+      const geoData = await geoResp.json();
+      if (geoData?.[0]) {
+        geoLat = parseFloat(geoData[0].lat);
+        geoLng = parseFloat(geoData[0].lon);
+      }
+    } catch(e) {}
+  }
+
   return {
     user_id:               currentUser.id,
     broker_name:           corretor.nome      || null,
     broker_creci:          corretor.creci     || null,
     broker_phone:          corretor.telefone  || null,
-    endereco:              nv('imovel'),
+    endereco:              enderecoDigitado,
     proprietario_nome:     nv('proprietario'),
     proprietario_telefone: nv('telProprietario'),
     tipo_imovel:           document.querySelector('input[name="tipo"]:checked')?.value || null,
@@ -2524,6 +2556,8 @@ async function buildVisitObject() {
       vagas:         nv('vagas'),
       area:          nv('area'),
       fotos:         fotosComprimidas,
+      geo_lat:       geoLat  || null,
+      geo_lng:       geoLng  || null,
     },
   };
 }
@@ -3406,9 +3440,12 @@ const DORES_LNG = -53.7920;
 const DORES_ZOOM = 15;
 
 let _captarMap = null;
-let _captarMarkers = {}; // id → marker
-let _doresLayer  = null; // polígono do bairro principal
-let _bairrosLayers = {}; // id → círculo dos demais bairros
+let _captarMarkers = {}; // prospect id → marker
+let _visitMarkersMap = {}; // visit id → marker
+let _visitsMapCache  = []; // cache de visitas com geo para o mapa
+let _doresLayer  = null;   // polígono do bairro principal
+let _bairrosLayers = {};   // id → camada dos demais bairros
+let _visitGeoLat = null, _visitGeoLng = null; // coords GPS do formulário de visita
 
 // Polígono REAL do Bairro Nossa Sra. das Dores — fonte: OpenStreetMap relation 3481534
 // GeoJSON nativo [lng, lat] — usado com L.geoJSON (não precisa converter)
@@ -3612,6 +3649,7 @@ async function openCaptar() {
   }
   _renderBairrosNoMapa();
   renderCaptarProspects();
+  _renderVisitsNoMapa();
 }
 
 function closeCaptar() {
@@ -4381,6 +4419,58 @@ function _formatarData(dateStr) {
 }
 
 // ─── RENDER PROSPECTS ──────────────────────────────────────────────────────
+
+// ── Renderiza marcadores de VISITAS REALIZADAS no mapa (ícone casa verde) ──
+async function _renderVisitsNoMapa() {
+  if (!_captarMap || !supa || !currentUser) return;
+
+  // Remove markers antigos
+  Object.values(_visitMarkersMap).forEach(m => { try { m.remove(); } catch(e){} });
+  _visitMarkersMap = {};
+
+  try {
+    const { data } = await supa
+      .from('visits')
+      .select('id,endereco,proprietario_nome,valor_pedido,data_visita,questionario')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (!data?.length) return;
+    _visitsMapCache = data;
+
+    data.forEach(v => {
+      const q = (typeof v.questionario === 'string') ? JSON.parse(v.questionario) : (v.questionario || {});
+      const lat = q.geo_lat, lng = q.geo_lng;
+      if (!lat || !lng) return;
+
+      const vid = v.id;
+      const icon = L.divIcon({
+        className: '',
+        html: `<svg xmlns="http://www.w3.org/2000/svg" width="30" height="38" viewBox="0 0 30 38">
+          <ellipse cx="15" cy="36" rx="5" ry="2" fill="rgba(0,0,0,0.2)"/>
+          <path d="M15 1 C6.7 1 1 7.2 1 14.5 C1 24 15 36 15 36 C15 36 29 24 29 14.5 C29 7.2 23.3 1 15 1 Z" fill="#15803d" stroke="#fff" stroke-width="1.5"/>
+          <polygon points="15,7 8,16 22,16" fill="white" opacity="0.95"/>
+          <rect x="10" y="16" width="10" height="8" rx="1" fill="white" opacity="0.95"/>
+          <rect x="13" y="19" width="4" height="5" fill="#15803d"/>
+        </svg>`,
+        iconSize: [30, 38], iconAnchor: [15, 36], popupAnchor: [0, -38]
+      });
+
+      const dataFmt = v.data_visita
+        ? new Date(v.data_visita + 'T12:00:00').toLocaleDateString('pt-BR') : '';
+      const popup = `<div style="font-size:13px;line-height:1.6;min-width:170px;">
+        <strong style="color:#15803d;">🏠 Visita Realizada</strong><br>
+        <strong>${v.endereco || '—'}</strong><br>
+        ${v.proprietario_nome ? '👤 ' + v.proprietario_nome + '<br>' : ''}
+        ${v.valor_pedido ? '💰 ' + v.valor_pedido + '<br>' : ''}
+        ${dataFmt ? '📅 ' + dataFmt : ''}
+      </div>`;
+
+      _visitMarkersMap[vid] = L.marker([lat, lng], { icon }).addTo(_captarMap).bindPopup(popup);
+    });
+  } catch(e) {}
+}
 
 function renderCaptarProspects() {
   const listaCompleta = _prospectsCache;
