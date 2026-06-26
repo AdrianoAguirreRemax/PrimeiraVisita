@@ -3396,6 +3396,8 @@ const BAIRROS_SM = [
   { id:'agroindustrial',nome:'Agroindustrial',                lat:-29.6460, lng:-53.8620 },
   { id:'boimorto',    nome:'Boi Morto',                       lat:-29.7380, lng:-53.8580 },
   { id:'campestre',   nome:'Campestre do Menino Deus',        lat:-29.6040, lng:-53.7710 },
+  { id:'meninodeus',  nome:'Menino Deus',                     lat:-29.6830, lng:-53.7850 },
+  { id:'meninojesus', nome:'Menino Jesus',                    lat:-29.6860, lng:-53.7780 },
 ];
 
 // Centro do Bairro Nossa Sra. das Dores — Santa Maria - RS
@@ -3491,13 +3493,13 @@ function _desenharPoligonoFallback(skipFitBounds = false) {
 async function _carregarPoligonoDores(skipFitBounds = false) {
   if (!_captarMap) return;
 
-  // ── 1. Overpass API — funciona direto do browser (CORS habilitado) ──
+  // ── 1. Overpass API — apenas limites administrativos/bairro (não empresas) ──
   try {
     const q = `[out:json][timeout:20];
 (
+  relation["name"~"Nossa Senhora das Dores"]["boundary"="administrative"](around:25000,${DORES_LAT},${DORES_LNG});
+  relation["name"~"Nossa Senhora das Dores"]["place"~"suburb|neighbourhood|quarter"](around:25000,${DORES_LAT},${DORES_LNG});
   way["name"~"Nossa Senhora das Dores"]["place"~"suburb|neighbourhood|quarter"](around:25000,${DORES_LAT},${DORES_LNG});
-  relation["name"~"Nossa Senhora das Dores"](around:25000,${DORES_LAT},${DORES_LNG});
-  way["name"="Dores"]["place"](around:15000,${DORES_LAT},${DORES_LNG});
 );
 out geom;`;
     const resp = await fetch('https://overpass-api.de/api/interpreter', {
@@ -3516,7 +3518,14 @@ out geom;`;
           const outer = el.members.filter(m => m.type==='way' && m.role==='outer' && m.geometry);
           if (outer.length) rings = outer.map(m => m.geometry.map(p => [p.lat, p.lon]));
         }
-        if (rings && rings[0] && rings[0].length > 2) {
+        if (rings && rings[0] && rings[0].length > 10) {
+          // Rejeita polígonos minúsculos (edifícios, terminais etc.) — bairro deve ter > 400m
+          let minLat=Infinity, maxLat=-Infinity, minLng=Infinity, maxLng=-Infinity;
+          for (const [la,ln] of rings[0]) {
+            if (la<minLat) minLat=la; if (la>maxLat) maxLat=la;
+            if (ln<minLng) minLng=ln; if (ln>maxLng) maxLng=ln;
+          }
+          if ((maxLat-minLat) < 0.004 || (maxLng-minLng) < 0.004) continue;
           _doresLayer = L.polygon(rings, {
             color: '#cc0000', fillColor: '#cc0000', fillOpacity: 0.08, weight: 2.5, dashArray: '7,5'
           }).addTo(_captarMap);
@@ -3657,12 +3666,13 @@ async function _carregarPoligonoBairro(id, nome, lat, lng, isPrincipal) {
     return;
   }
 
-  // ── 1. Overpass: nome exato dentro de 12km do centro do bairro ──
+  // ── 1. Overpass: apenas limites adm/bairro (não empresas ou igrejas homônimas) ──
   try {
     const q = `[out:json][timeout:15];
 (
+  relation["name"~"${nomeOsm}"]["boundary"="administrative"](around:12000,${lat},${lng});
+  relation["name"~"${nomeOsm}"]["place"~"suburb|neighbourhood|quarter"](around:12000,${lat},${lng});
   way["name"~"${nomeOsm}"]["place"~"suburb|neighbourhood|quarter"](around:12000,${lat},${lng});
-  relation["name"~"${nomeOsm}"](around:12000,${lat},${lng});
 );
 out geom;`;
     const resp = await fetch('https://overpass-api.de/api/interpreter', {
@@ -3681,7 +3691,14 @@ out geom;`;
           const outer = el.members.filter(m => m.type==='way' && m.role==='outer' && m.geometry);
           if (outer.length) rings = outer.map(m => m.geometry.map(p => [p.lat, p.lon]));
         }
-        if (rings && rings[0]?.length > 2) {
+        if (rings && rings[0]?.length > 10) {
+          // Rejeita polígonos minúsculos (edifícios/empresas) — bairro deve ter > 400m
+          let minLat=Infinity, maxLat=-Infinity, minLng=Infinity, maxLng=-Infinity;
+          for (const [la,ln] of rings[0]) {
+            if (la<minLat) minLat=la; if (la>maxLat) maxLat=la;
+            if (ln<minLng) minLng=ln; if (ln>maxLng) maxLng=ln;
+          }
+          if ((maxLat-minLat) < 0.004 || (maxLng-minLng) < 0.004) continue;
           const layer = L.polygon(rings, style).addTo(_captarMap);
           layer.bindTooltip(nome, { permanent: true, direction: 'center', className: 'leaflet-bairro-label' });
           _bairrosLayers[id] = layer;
