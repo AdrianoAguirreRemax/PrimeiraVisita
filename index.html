@@ -4796,6 +4796,8 @@ function _adicionarTelefoneRow(val) {
   row.innerHTML = `
     <input type="tel" value="${(val || '').replace(/"/g,'&quot;')}" placeholder="(55) 99999-9999"
       style="flex:1;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+    <button type="button" ontouchstart="" onclick="_abrirWhatsAppTel(this)"
+      style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:16px;cursor:pointer;flex-shrink:0;" title="Enviar mensagem no WhatsApp">📲</button>
     <button type="button" onclick="this.parentElement.remove()"
       style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 10px;font-size:14px;cursor:pointer;flex-shrink:0;">✕</button>
   `;
@@ -4834,10 +4836,32 @@ function _addVisitTelRow(val, listId) {
   row.innerHTML = `
     <input type="tel" value="${(val || '').replace(/"/g,'&quot;')}" placeholder="(55) 99999-9999"
       style="flex:1;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+    <button type="button" ontouchstart="" onclick="_abrirWhatsAppTel(this)"
+      style="background:#25D366;color:#fff;border:none;border-radius:8px;padding:8px 10px;font-size:16px;cursor:pointer;flex-shrink:0;" title="Enviar mensagem no WhatsApp">📲</button>
     <button type="button" onclick="this.parentElement.remove()"
       style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 10px;font-size:14px;cursor:pointer;flex-shrink:0;">✕</button>
   `;
   lista.appendChild(row);
+}
+
+function _abrirWhatsAppTel(btn) {
+  const input = btn.parentElement.querySelector('input[type=tel]');
+  if (!input) return;
+  const raw = input.value.trim();
+  if (!raw) { showToast('⚠️ Digite o número antes de abrir o WhatsApp.'); return; }
+  const digits = raw.replace(/\D/g, '');
+  if (digits.length < 8) { showToast('⚠️ Número inválido.'); return; }
+  const phone = digits.startsWith('55') ? digits : '55' + digits;
+  const msg =
+    'Olá, tudo bem?\n' +
+    'Meu nome é Adriano Aguirre, sou consultor imobiliário da RE/MAX em Santa Maria.\n' +
+    'Vi que o seu imóvel está disponível para venda e gostaria de saber se ele ainda está disponível.\n' +
+    'Caso sim, gostaria de agendar uma visita em um dia e horário que seja mais confortável para você. ' +
+    'O objetivo é conhecer o imóvel pessoalmente, entender melhor a sua expectativa de venda e apresentar como realizo o trabalho de comercialização, ' +
+    'além de verificar se já possuo clientes com perfil compatível para o seu imóvel.\n' +
+    'A visita é sem compromisso e costuma ser rápida.\n' +
+    'Qual o melhor dia e horário para conversarmos?';
+  window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
 }
 
 function addVisitTel(listId) {
