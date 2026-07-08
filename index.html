@@ -1446,6 +1446,12 @@
         <label style="font-size:11px;font-weight:700;color:#d97706;display:block;margin-bottom:4px;">📅 DATA DO PRÓXIMO CONTATO</label>
         <input type="date" id="vEditFollowupDate" style="width:100%;padding:10px;border:1.5px solid #fde68a;border-radius:8px;font-size:14px;outline:none;background:#fffbeb;box-sizing:border-box;">
       </div>
+      <!-- Botão Solicitar Fotos — aparece só quando status = captado -->
+      <div id="vEditBtnSolicitarFotos" style="display:none;">
+        <button ontouchstart="" onclick="abrirSolicitarFotos()" style="width:100%;padding:13px;background:#15803d;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:8px;">
+          📸 Solicitar Fotos do Imóvel
+        </button>
+      </div>
 
       <!-- OBSERVAÇÕES -->
       <div>
@@ -1459,6 +1465,148 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SOLICITAR FOTOS — overlay tela cheia
+══════════════════════════════════ -->
+<div id="solicitarFotosOverlay" style="display:none;position:fixed;inset:0;background:#f9fafb;z-index:1400;flex-direction:column;">
+  <!-- Header -->
+  <div style="position:sticky;top:0;background:#15803d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;z-index:2;flex-shrink:0;">
+    <h3 style="font-size:16px;font-weight:700;color:#fff;margin:0;">📸 Solicitar Fotos</h3>
+    <button ontouchstart="" onclick="fecharSolicitarFotos()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">✕ Fechar</button>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px;display:flex;flex-direction:column;gap:20px;">
+
+    <!-- SERVIÇO -->
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">📷 Serviço</div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;">
+          <input type="checkbox" id="sfServFoto" value="Foto" style="width:18px;height:18px;accent-color:#15803d;"> Foto
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;">
+          <input type="checkbox" id="sfServDrone" value="Drone" style="width:18px;height:18px;accent-color:#15803d;"> Drone
+        </label>
+      </div>
+    </div>
+
+    <!-- TIPO -->
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">🏠 Tipo do Imóvel</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;"><input type="radio" name="sfTipo" value="Apartamento" style="width:18px;height:18px;accent-color:#15803d;"> Apartamento</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;"><input type="radio" name="sfTipo" value="Casa" style="width:18px;height:18px;accent-color:#15803d;"> Casa</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;"><input type="radio" name="sfTipo" value="Terreno" style="width:18px;height:18px;accent-color:#15803d;"> Terreno</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;"><input type="radio" name="sfTipo" value="Cobertura" style="width:18px;height:18px;accent-color:#15803d;"> Cobertura</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;"><input type="radio" name="sfTipo" value="Loja/Sala Comercial" style="width:18px;height:18px;accent-color:#15803d;"> Loja / Sala Comercial</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;">
+          <input type="radio" name="sfTipo" value="outros" style="width:18px;height:18px;accent-color:#15803d;"> Outros:
+          <input type="text" id="sfTipoOutros" placeholder="especifique" style="flex:1;padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:6px;font-size:14px;outline:none;">
+        </label>
+      </div>
+    </div>
+
+    <!-- ENDEREÇO -->
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">📍 Endereço</div>
+      <input type="text" id="sfEndereco" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+    </div>
+
+    <!-- SITUAÇÃO -->
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">🚪 Situação</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;"><input type="radio" name="sfSituacao" value="Morador - Proprietário" style="width:18px;height:18px;accent-color:#15803d;"> Morador - Proprietário</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;"><input type="radio" name="sfSituacao" value="Morador - Inquilino" style="width:18px;height:18px;accent-color:#15803d;"> Morador - Inquilino</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:15px;cursor:pointer;"><input type="radio" name="sfSituacao" value="Desocupado" style="width:18px;height:18px;accent-color:#15803d;"> Desocupado</label>
+      </div>
+    </div>
+
+    <!-- METRAGEM -->
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">📐 Metragem</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="text" id="sfMetragem" placeholder="Ex: 80" style="width:100px;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;text-align:center;">
+        <span style="font-size:15px;color:#374151;">m²</span>
+      </div>
+    </div>
+
+    <!-- POSIÇÃO SOLAR -->
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">🌅 Posição Solar (Manhã)</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:15px;cursor:pointer;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 14px;">
+          <input type="radio" name="sfPosicao" value="Norte" style="width:16px;height:16px;accent-color:#15803d;"> N
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:15px;cursor:pointer;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 14px;">
+          <input type="radio" name="sfPosicao" value="Sul" style="width:16px;height:16px;accent-color:#15803d;"> S
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:15px;cursor:pointer;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 14px;">
+          <input type="radio" name="sfPosicao" value="Leste" style="width:16px;height:16px;accent-color:#15803d;"> L
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:15px;cursor:pointer;background:#f9fafb;border:1.5px solid #e5e7eb;border-radius:8px;padding:8px 14px;">
+          <input type="radio" name="sfPosicao" value="Oeste" style="width:16px;height:16px;accent-color:#15803d;"> O
+        </label>
+      </div>
+    </div>
+
+    <!-- ORGANIZAÇÃO -->
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">🧹 Organização</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:13px;color:#6b7280;align-self:center;">0</span>
+        <div id="sfOrgBtns" style="display:flex;gap:6px;">
+          <button type="button" onclick="sfSetOrg(1)" id="sfOrg1" style="width:40px;height:40px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:15px;cursor:pointer;">1</button>
+          <button type="button" onclick="sfSetOrg(2)" id="sfOrg2" style="width:40px;height:40px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:15px;cursor:pointer;">2</button>
+          <button type="button" onclick="sfSetOrg(3)" id="sfOrg3" style="width:40px;height:40px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:15px;cursor:pointer;">3</button>
+          <button type="button" onclick="sfSetOrg(4)" id="sfOrg4" style="width:40px;height:40px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:15px;cursor:pointer;">4</button>
+          <button type="button" onclick="sfSetOrg(5)" id="sfOrg5" style="width:40px;height:40px;border-radius:8px;border:1.5px solid #e5e7eb;background:#f9fafb;font-size:15px;cursor:pointer;">5</button>
+        </div>
+        <span style="font-size:13px;color:#6b7280;align-self:center;">5</span>
+      </div>
+      <input type="hidden" id="sfOrganizacao" value="">
+    </div>
+
+    <!-- OPÇÕES DE HORÁRIOS -->
+    <div>
+      <div style="font-size:11px;font-weight:800;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;padding-bottom:6px;border-bottom:2px solid #e5e7eb;margin-bottom:12px;">🕐 Opções de Horários</div>
+      <div style="display:flex;flex-direction:column;gap:8px;" id="sfHorariosList">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="date" class="sf-horario-data" style="flex:1;padding:9px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+          <input type="time" class="sf-horario-hora" style="width:100px;padding:9px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="date" class="sf-horario-data" style="flex:1;padding:9px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+          <input type="time" class="sf-horario-hora" style="width:100px;padding:9px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input type="date" class="sf-horario-data" style="flex:1;padding:9px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+          <input type="time" class="sf-horario-hora" style="width:100px;padding:9px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+        </div>
+      </div>
+      <button ontouchstart="" onclick="sfAdicionarHorario()" style="margin-top:8px;background:none;border:1.5px dashed #d1d5db;border-radius:8px;padding:8px 14px;font-size:13px;color:#6b7280;cursor:pointer;width:100%;touch-action:manipulation;">＋ Adicionar horário</button>
+    </div>
+
+    <!-- BOTÃO GERAR MENSAGEM -->
+    <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:env(safe-area-inset-bottom,16px);">
+      <button ontouchstart="" onclick="sfGerarMensagem()" style="width:100%;padding:15px;background:#15803d;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;touch-action:manipulation;">
+        📋 Gerar Mensagem para Fotógrafo
+      </button>
+      <div id="sfMensagemBox" style="display:none;background:#fff;border:1.5px solid #d1fae5;border-radius:10px;padding:14px;">
+        <div style="font-size:11px;font-weight:700;color:#15803d;margin-bottom:8px;">MENSAGEM GERADA — toque para copiar:</div>
+        <pre id="sfMensagemTexto" onclick="sfCopiarMensagem()" style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;color:#1f2937;margin:0;cursor:pointer;"></pre>
+        <button ontouchstart="" onclick="sfCopiarMensagem()" style="margin-top:10px;width:100%;padding:11px;background:#0a1628;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">
+          📋 Copiar Mensagem
+        </button>
+        <button ontouchstart="" onclick="sfEnviarWhatsApp()" style="margin-top:8px;width:100%;padding:11px;background:#25d366;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">
+          💬 Abrir no WhatsApp
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /scroll -->
 </div>
 
 <!-- ══════════════════════════════════
@@ -3272,6 +3420,7 @@ async function abrirEditarVisita(vid) {
   const tipoOpt = [...tipoSel.options].find(o => o.value === data.tipo_imovel);
   tipoSel.value = tipoOpt ? tipoOpt.value : (data.tipo_imovel || '');
   document.getElementById('vEditFollowupRow').style.display = (data.status === 'follow_up') ? 'block' : 'none';
+  document.getElementById('vEditBtnSolicitarFotos').style.display = (data.status === 'captado') ? 'block' : 'none';
   // Carrega fotos existentes nas 4 seções
   Object.keys(_vEditSections).forEach(s => _vEditSections[s] = []);
   (q.fotos || []).forEach(f => {
@@ -3377,9 +3526,136 @@ async function confirmarVisitFollowup() {
   await loadHistory();
 }
 
+// ═══ SOLICITAR FOTOS ═══
+let _sfOrgValue = 0;
+
+function sfSetOrg(n) {
+  _sfOrgValue = n;
+  document.getElementById('sfOrganizacao').value = n;
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.getElementById('sfOrg' + i);
+    if (!btn) continue;
+    btn.style.background = i <= n ? '#15803d' : '#f9fafb';
+    btn.style.color      = i <= n ? '#fff'    : '#374151';
+    btn.style.borderColor= i <= n ? '#15803d' : '#e5e7eb';
+  }
+}
+
+function sfAdicionarHorario() {
+  const list = document.getElementById('sfHorariosList');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+  row.innerHTML = `
+    <input type="date" class="sf-horario-data" style="flex:1;padding:9px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+    <input type="time" class="sf-horario-hora" style="width:100px;padding:9px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+    <button type="button" onclick="this.parentElement.remove()" style="background:#fee2e2;border:none;border-radius:8px;padding:8px 10px;color:#dc2626;cursor:pointer;font-size:14px;">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+function abrirSolicitarFotos() {
+  // Pré-preenche com dados da visita em edição
+  const end    = document.getElementById('vEditEnd')?.value  || '';
+  const tipo   = document.getElementById('vEditTipo')?.value || '';
+  const area   = document.getElementById('vEditArea')?.value || '';
+
+  document.getElementById('sfEndereco').value = end;
+  document.getElementById('sfMetragem').value = area.replace(/[^\d.,]/g, '');
+
+  // Tipo → marca o radio correspondente
+  const tipoMap = { 'Apartamento':'Apartamento','Casa':'Casa','Terreno':'Terreno','Cobertura':'Cobertura','Comercial':'Loja/Sala Comercial' };
+  const tipoNorm = tipoMap[tipo] || null;
+  document.querySelectorAll('input[name="sfTipo"]').forEach(r => {
+    r.checked = (r.value === tipoNorm);
+  });
+
+  // Reset checkboxes, radios e organização
+  document.getElementById('sfServFoto').checked  = false;
+  document.getElementById('sfServDrone').checked = false;
+  document.querySelectorAll('input[name="sfSituacao"]').forEach(r => r.checked = false);
+  document.querySelectorAll('input[name="sfPosicao"]').forEach(r => r.checked = false);
+  sfSetOrg(0);
+  document.getElementById('sfMensagemBox').style.display = 'none';
+
+  // Esconde o modal de edição e abre o overlay
+  document.getElementById('visitEditModal').style.display = 'none';
+  document.getElementById('solicitarFotosOverlay').style.display = 'flex';
+}
+
+function fecharSolicitarFotos() {
+  document.getElementById('solicitarFotosOverlay').style.display = 'none';
+  document.getElementById('visitEditModal').style.display = 'flex';
+}
+
+function sfGerarMensagem() {
+  const servicos = [];
+  if (document.getElementById('sfServFoto').checked)  servicos.push('Foto');
+  if (document.getElementById('sfServDrone').checked) servicos.push('Drone');
+
+  const tipoSel    = document.querySelector('input[name="sfTipo"]:checked');
+  let tipo = tipoSel?.value || '';
+  if (tipo === 'outros') tipo = document.getElementById('sfTipoOutros').value.trim() || 'Outro';
+
+  const endereco   = document.getElementById('sfEndereco').value.trim();
+  const situacaoEl = document.querySelector('input[name="sfSituacao"]:checked');
+  const situacao   = situacaoEl?.value || '';
+  const metragem   = document.getElementById('sfMetragem').value.trim();
+  const posicaoEl  = document.querySelector('input[name="sfPosicao"]:checked');
+  const posicao    = posicaoEl?.value || '';
+  const org        = document.getElementById('sfOrganizacao').value || '';
+
+  // Horários
+  const datas = document.querySelectorAll('.sf-horario-data');
+  const horas = document.querySelectorAll('.sf-horario-hora');
+  const horarios = [];
+  datas.forEach((d, i) => {
+    if (d.value || horas[i]?.value) {
+      const dataFmt = d.value ? new Date(d.value + 'T12:00:00').toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'2-digit' }) : '';
+      const horaFmt = horas[i]?.value || '';
+      horarios.push((dataFmt && horaFmt) ? `${dataFmt} às ${horaFmt}` : (dataFmt || horaFmt));
+    }
+  });
+
+  // Monta mensagem
+  const linhas = [
+    '📸 *SOLICITAÇÃO DE FOTOS — REMAX Noble*',
+    '',
+    servicos.length  ? `🎯 *Serviço:* ${servicos.join(' + ')}` : null,
+    tipo             ? `🏠 *Tipo:* ${tipo}` : null,
+    endereco         ? `📍 *Endereço:* ${endereco}` : null,
+    situacao         ? `🚪 *Situação:* ${situacao}` : null,
+    metragem         ? `📐 *Metragem:* ${metragem}m²` : null,
+    posicao          ? `🌅 *Posição solar (manhã):* ${posicao}` : null,
+    org              ? `🧹 *Organização:* ${org}/5` : null,
+    horarios.length  ? `\n⏰ *Opções de horários:*\n${horarios.map(h => '  • ' + h).join('\n')}` : null,
+  ].filter(l => l !== null).join('\n');
+
+  document.getElementById('sfMensagemTexto').textContent = linhas;
+  document.getElementById('sfMensagemBox').style.display = 'block';
+  document.getElementById('sfMensagemBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function sfCopiarMensagem() {
+  const txt = document.getElementById('sfMensagemTexto').textContent;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(txt).then(() => showToast('📋 Mensagem copiada!'));
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('📋 Mensagem copiada!');
+  }
+}
+
+function sfEnviarWhatsApp() {
+  const txt = document.getElementById('sfMensagemTexto').textContent;
+  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+}
+
 function toggleVEditFollowup() {
-  const show = document.getElementById('vEditStatus').value === 'follow_up';
-  document.getElementById('vEditFollowupRow').style.display = show ? 'block' : 'none';
+  const status = document.getElementById('vEditStatus').value;
+  document.getElementById('vEditFollowupRow').style.display = (status === 'follow_up') ? 'block' : 'none';
+  document.getElementById('vEditBtnSolicitarFotos').style.display = (status === 'captado') ? 'block' : 'none';
 }
 
 async function saveObs(id) {
