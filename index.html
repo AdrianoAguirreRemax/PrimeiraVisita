@@ -917,6 +917,14 @@
       <input type="text" id="proprietario" placeholder="Nome completo do proprietário" autocomplete="off">
     </div>
     <div class="field">
+      <label>Telefones de contato</label>
+      <div id="visitTelsList" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button type="button" onclick="addVisitTel('visitTelsList')"
+        style="margin-top:6px;background:none;border:1.5px dashed #d1d5db;border-radius:8px;padding:7px 12px;font-size:13px;color:#6b7280;cursor:pointer;width:100%;text-align:left;">
+        + Adicionar telefone
+      </button>
+    </div>
+    <div class="field">
       <label>Endereço / Imóvel *</label>
       <div style="display:flex;gap:8px;align-items:center;">
         <input type="text" id="imovel" placeholder="Rua, número, complemento, bairro" style="flex:1;">
@@ -1393,8 +1401,12 @@
         <input type="text" id="vEditProp" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
       </div>
       <div>
-        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">TELEFONE</label>
-        <input type="tel" id="vEditTel" placeholder="(55) 99999-9999" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box;">
+        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:4px;">TELEFONES</label>
+        <div id="vEditTelsList" style="display:flex;flex-direction:column;gap:6px;"></div>
+        <button type="button" onclick="addVisitTel('vEditTelsList')"
+          style="margin-top:6px;background:none;border:1.5px dashed #d1d5db;border-radius:8px;padding:7px 12px;font-size:12px;color:#6b7280;cursor:pointer;width:100%;text-align:left;box-sizing:border-box;">
+          + Adicionar telefone
+        </button>
       </div>
 
       <!-- PERGUNTAS -->
@@ -1761,6 +1773,8 @@ function startNovaVisita() {
   const nb = document.querySelector('.nav-bar'); if(nb) nb.style.display = 'flex';
   const hs = document.querySelector('.header-step'); if(hs) hs.style.display = 'flex';
   currentStep = 1;
+  // Inicializa lista de telefones com uma linha vazia
+  _initVisitTels([], 'visitTelsList');
   // Reabilita botão de salvar para nova visita
   _salvando = false;
   const btnSalvar = document.querySelector('[onclick="salvarVisita()"]');
@@ -2701,7 +2715,7 @@ async function buildVisitObject() {
     broker_phone:          corretor.telefone  || null,
     endereco:              enderecoDigitado,
     proprietario_nome:     nv('proprietario'),
-    proprietario_telefone: nv('telProprietario'),
+    proprietario_telefone: _getVisitTels('visitTelsList')[0] || null,
     tipo_imovel:           document.querySelector('input[name="tipo"]:checked')?.value || null,
     valor_pedido:          nv('valorPedido'),
     data_visita:           nv('data'),
@@ -2726,6 +2740,7 @@ async function buildVisitObject() {
       fotos:         fotosComprimidas,
       geo_lat:       geoLat  || null,
       geo_lng:       geoLng  || null,
+      telefones_contato: _getVisitTels('visitTelsList').length ? _getVisitTels('visitTelsList') : null,
     },
   };
 }
@@ -3279,7 +3294,8 @@ async function abrirDetalheVisita(vid) {
   html += row('CRECI', vt.broker_creci);
   html += row('Telefone corretor', vt.broker_phone);
   html += row('Proprietário', vt.proprietario_nome);
-  html += row('Tel. proprietário', vt.proprietario_telefone);
+  const _allTels = q.telefones_contato?.length ? q.telefones_contato : (vt.proprietario_telefone ? [vt.proprietario_telefone] : []);
+  if (_allTels.length) html += row('Telefones', _allTels.join(' · '));
   html += row('Endereço', vt.endereco);
   html += row('Tipo de imóvel', vt.tipo_imovel);
   html += row('Valor pedido', vt.valor_pedido);
@@ -3397,7 +3413,9 @@ async function abrirEditarVisita(vid) {
   const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
   set('vEditId', vid);
   set('vEditProp',        data.proprietario_nome);
-  set('vEditTel',         data.proprietario_telefone);
+  // Carrega telefones (novo formato array ou retrocompat campo único)
+  const _vTels = q.telefones_contato?.length ? q.telefones_contato : (data.proprietario_telefone ? [data.proprietario_telefone] : []);
+  _initVisitTels(_vTels, 'vEditTelsList');
   set('vEditEnd',         data.endereco);
   set('vEditValor',       data.valor_pedido);
   set('vEditObs',         data.observacoes);
@@ -3463,6 +3481,7 @@ async function salvarVisitaEditada() {
   const g = id => document.getElementById(id)?.value.trim() || null;
   const _geoLat = parseFloat(document.getElementById('vEditGeoLat')?.value) || null;
   const _geoLng = parseFloat(document.getElementById('vEditGeoLng')?.value) || null;
+  const _editTels = _getVisitTels('vEditTelsList');
   const qAtualizado = {
     hora: g('vEditHora'), link_anuncio: g('vEditLink'),
     dorms: g('vEditDorms'), suites: g('vEditSuites'), banheiros: g('vEditBanh'),
@@ -3471,6 +3490,7 @@ async function salvarVisitaEditada() {
     q1: g('vEditQ1'), q2: g('vEditQ2'), q3: g('vEditQ3'), q4: g('vEditQ4'),
     q5: g('vEditQ5'), q6: g('vEditQ6'), q7: g('vEditQ7'), q8: g('vEditQ8'),
     geo_lat: _geoLat, geo_lng: _geoLng,
+    telefones_contato: _editTels.length ? _editTels : null,
   };
   // Preserva campos do questionario que não editamos (data_inicio_gestao, etc.)
   const existente = (await supa.from('visits').select('questionario').eq('id', vid).single()).data;
@@ -3486,7 +3506,7 @@ async function salvarVisitaEditada() {
   qMerged.fotos = fotosParaSalvar;
   const updates = {
     proprietario_nome:     g('vEditProp'),
-    proprietario_telefone: g('vEditTel'),
+    proprietario_telefone: _editTels[0] || null,
     endereco:              g('vEditEnd'),
     tipo_imovel:           document.getElementById('vEditTipo').value,
     valor_pedido:          g('vEditValor'),
@@ -4643,6 +4663,9 @@ function iniciarVisitaFromProspect(id) {
   setTimeout(() => {
     if (p.endereco)    { const f = document.getElementById('imovel');      if (f) f.value = p.endereco; }
     if (p.proprietario){ const f = document.getElementById('proprietario'); if (f) f.value = p.proprietario; }
+    // Pré-preenche telefones do prospect no formulário de visita
+    const _pTels = p.telefonesLista?.length ? p.telefonesLista : (p.telefone ? [p.telefone] : []);
+    if (_pTels.length) _initVisitTels(_pTels, 'visitTelsList');
     if (p.link)        { const f = document.getElementById('linkAnuncio'); if (f) f.value = p.link; }
     if (p.valor)       { const f = document.getElementById('valorPedido'); if (f) f.value = p.valor; }
     if (p.tipo) {
@@ -4754,6 +4777,44 @@ function adicionarTelefone() {
 
 function _getTelefones() {
   const lista = document.getElementById('telefonesLista');
+  if (!lista) return [];
+  return [...lista.querySelectorAll('input[type=tel]')]
+    .map(i => i.value.trim())
+    .filter(v => v.length > 0);
+}
+
+// ─── TELEFONES DA FICHA DE VISITA ──────────────────────────────────────────
+function _initVisitTels(arr, listId) {
+  const lista = document.getElementById(listId);
+  if (!lista) return;
+  lista.innerHTML = '';
+  if (!arr || !arr.length) {
+    _addVisitTelRow('', listId);
+  } else {
+    arr.forEach(tel => _addVisitTelRow(tel, listId));
+  }
+}
+
+function _addVisitTelRow(val, listId) {
+  const lista = document.getElementById(listId);
+  if (!lista) return;
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+  row.innerHTML = `
+    <input type="tel" value="${(val || '').replace(/"/g,'&quot;')}" placeholder="(55) 99999-9999"
+      style="flex:1;padding:9px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+    <button type="button" onclick="this.parentElement.remove()"
+      style="background:#fee2e2;color:#dc2626;border:none;border-radius:8px;padding:8px 10px;font-size:14px;cursor:pointer;flex-shrink:0;">✕</button>
+  `;
+  lista.appendChild(row);
+}
+
+function addVisitTel(listId) {
+  _addVisitTelRow('', listId);
+}
+
+function _getVisitTels(listId) {
+  const lista = document.getElementById(listId);
   if (!lista) return [];
   return [...lista.querySelectorAll('input[type=tel]')]
     .map(i => i.value.trim())
@@ -5462,6 +5523,7 @@ async function generatePDF() {
       document.querySelectorAll('input[type="text"],input[type="tel"],input[type="date"],input[type="time"],textarea').forEach(el => {
         if (!['corretorNome','corretorCreci','corretorTelefone'].includes(el.id)) el.value = '';
       });
+      _initVisitTels([], 'visitTelsList');
       document.querySelectorAll('input[type="radio"],input[type="checkbox"]').forEach(el => el.checked = false);
       ['Matricula','Interiores','Fachada','Destaques'].forEach(s => {
         const g = document.getElementById('grid'+s); if(g) g.innerHTML = '';
@@ -5565,7 +5627,8 @@ async function gerarPDFFromHistory(vid) {
     const dtVisita = vt.data_visita ? new Date(vt.data_visita + 'T12:00:00').toLocaleDateString('pt-BR') : '';
     drawSec('Identificação do Imóvel');
     drawField('Proprietário', vt.proprietario_nome);
-    if (vt.proprietario_telefone) drawField('Telefone do proprietário', vt.proprietario_telefone);
+    const _pdfTels = (q.telefones_contato?.length ? q.telefones_contato : (vt.proprietario_telefone ? [vt.proprietario_telefone] : []));
+    if (_pdfTels.length) drawField('Telefone(s) do proprietário', _pdfTels.join(' · '));
     drawField('Endereço / Imóvel', vt.endereco);
     if (dtVisita || q.hora) drawField('Data e hora', [dtVisita, q.hora ? 'às ' + q.hora : ''].filter(Boolean).join(' '));
     drawField('Tipo de imóvel', vt.tipo_imovel);
