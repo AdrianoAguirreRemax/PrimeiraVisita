@@ -745,7 +745,7 @@
       </div>
       <div>
         <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">PROPRIETÁRIO / CONTATO</label>
-        <input id="pProprietario" type="text" placeholder="Nome do proprietário" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
+        <input id="pProprietario" type="text" placeholder="Nome do proprietário" autocomplete="off" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;">
       </div>
       <div>
         <label style="font-size:12px;font-weight:700;color:#374151;display:block;margin-bottom:4px;">TELEFONES</label>
@@ -1773,8 +1773,17 @@ function startNovaVisita() {
   const nb = document.querySelector('.nav-bar'); if(nb) nb.style.display = 'flex';
   const hs = document.querySelector('.header-step'); if(hs) hs.style.display = 'flex';
   currentStep = 1;
-  // Inicializa lista de telefones com uma linha vazia
+  // ── Limpa todos os campos do formulário para nova visita ──
+  document.querySelectorAll('#step1 input[type="text"], #step1 input[type="date"], #step1 input[type="time"], #step1 input[type="url"], #step1 textarea').forEach(el => {
+    if (!['corretorNome','corretorCreci','corretorTelefone'].includes(el.id)) el.value = '';
+  });
+  document.querySelectorAll('#step1 input[type="radio"], #step1 input[type="checkbox"]').forEach(el => el.checked = false);
+  // Reinicia lista de telefones com uma linha vazia
   _initVisitTels([], 'visitTelsList');
+  // Preenche data/hora atual
+  const now = new Date();
+  const dtEl = document.getElementById('data'); if(dtEl) dtEl.value = now.toISOString().split('T')[0];
+  const hrEl = document.getElementById('hora'); if(hrEl) hrEl.value = now.toTimeString().slice(0,5);
   // Reabilita botão de salvar para nova visita
   _salvando = false;
   const btnSalvar = document.querySelector('[onclick="salvarVisita()"]');
@@ -2675,6 +2684,34 @@ async function buildVisitObject() {
   const nv = id => { const val = v(id); return val !== '—' ? val : null; };
   const totalFotos = Object.values(photos).reduce((s, a) => s + a.length, 0);
 
+  // ── Captura todos os campos do formulário ANTES de qualquer await ──
+  // Evita race condition onde GPS ou outra fn async sobrescreve campos durante compressão
+  const _snap = {
+    proprietario:  nv('proprietario'),
+    imovel:        nv('imovel'),
+    valorPedido:   nv('valorPedido'),
+    data:          nv('data'),
+    hora:          nv('hora'),
+    linkAnuncio:   nv('linkAnuncio'),
+    visitTels:     _getVisitTels('visitTelsList'),
+    tipo:          document.querySelector('input[name="tipo"]:checked')?.value || null,
+    conservacao:   document.querySelector('input[name="conservacao"]:checked')?.value || null,
+    dorms:         document.querySelector('input[name="dorms"]:checked')?.value || null,
+    suites:        document.querySelector('input[name="suites"]:checked')?.value || null,
+    banheiros:     document.querySelector('input[name="banheiros"]:checked')?.value || null,
+    adicionais:    Array.from(document.querySelectorAll('input[name="adicionais"]:checked')).map(x => x.value).join(', ') || null,
+    vagas:         nv('vagas'),
+    area:          nv('area'),
+    q1: document.getElementById('q1')?.value || '',
+    q2: document.getElementById('q2')?.value || '',
+    q3: document.getElementById('q3')?.value || '',
+    q4: document.getElementById('q4')?.value || '',
+    q5: document.getElementById('q5')?.value || '',
+    q6: document.getElementById('q6')?.value || '',
+    q7: document.getElementById('q7')?.value || '',
+    q8: document.getElementById('q8')?.value || '',
+  };
+
   // Comprime e salva fotos (máx 8 fotos no total para não estourar banco)
   const fotosComprimidas = [];
   const secLabels = { matricula:'Matrícula', interiores:'Interiores', fachada:'Fachada', destaques:'Destaques' };
@@ -2690,12 +2727,12 @@ async function buildVisitObject() {
   }
 
   // ── Geocodifica o endereço do imóvel para marcar no mapa ──
+  // Usa _snap.imovel capturado antes dos awaits (evita race condition com GPS)
   let geoLat = null, geoLng = null;
-  const enderecoDigitado = nv('imovel');
-  if (enderecoDigitado) {
+  if (_snap.imovel) {
     try {
-      const jaTemSM2 = /santa\s*maria/i.test(enderecoDigitado);
-      const geoQuery = jaTemSM2 ? enderecoDigitado : (enderecoDigitado + ', Santa Maria, RS');
+      const jaTemSM2 = /santa\s*maria/i.test(_snap.imovel);
+      const geoQuery = jaTemSM2 ? _snap.imovel : (_snap.imovel + ', Santa Maria, RS');
       const geoResp = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(geoQuery)}&format=json&limit=1&countrycodes=br&viewbox=-54.05,-29.50,-53.55,-29.90&bounded=0`,
         { signal: _mkSignal(8000) }
@@ -2713,34 +2750,28 @@ async function buildVisitObject() {
     broker_name:           corretor.nome      || null,
     broker_creci:          corretor.creci     || null,
     broker_phone:          corretor.telefone  || null,
-    endereco:              enderecoDigitado,
-    proprietario_nome:     nv('proprietario'),
-    proprietario_telefone: _getVisitTels('visitTelsList')[0] || null,
-    tipo_imovel:           document.querySelector('input[name="tipo"]:checked')?.value || null,
-    valor_pedido:          nv('valorPedido'),
-    data_visita:           nv('data'),
+    endereco:              _snap.imovel,
+    proprietario_nome:     _snap.proprietario,
+    proprietario_telefone: _snap.visitTels[0] || null,
+    tipo_imovel:           _snap.tipo,
+    valor_pedido:          _snap.valorPedido,
+    data_visita:           _snap.data,
     questionario: {
-      q1: document.getElementById('q1')?.value || '',
-      q2: document.getElementById('q2')?.value || '',
-      q3: document.getElementById('q3')?.value || '',
-      q4: document.getElementById('q4')?.value || '',
-      q5: document.getElementById('q5')?.value || '',
-      q6: document.getElementById('q6')?.value || '',
-      q7: document.getElementById('q7')?.value || '',
-      q8: document.getElementById('q8')?.value || '',
-      hora:          nv('hora'),
-      link_anuncio:  nv('linkAnuncio'),
-      conservacao:   document.querySelector('input[name="conservacao"]:checked')?.value || null,
-      dorms:         document.querySelector('input[name="dorms"]:checked')?.value || null,
-      suites:        document.querySelector('input[name="suites"]:checked')?.value || null,
-      banheiros:     document.querySelector('input[name="banheiros"]:checked')?.value || null,
-      adicionais:    Array.from(document.querySelectorAll('input[name="adicionais"]:checked')).map(x => x.value).join(', ') || null,
-      vagas:         nv('vagas'),
-      area:          nv('area'),
+      q1: _snap.q1, q2: _snap.q2, q3: _snap.q3, q4: _snap.q4,
+      q5: _snap.q5, q6: _snap.q6, q7: _snap.q7, q8: _snap.q8,
+      hora:          _snap.hora,
+      link_anuncio:  _snap.linkAnuncio,
+      conservacao:   _snap.conservacao,
+      dorms:         _snap.dorms,
+      suites:        _snap.suites,
+      banheiros:     _snap.banheiros,
+      adicionais:    _snap.adicionais,
+      vagas:         _snap.vagas,
+      area:          _snap.area,
       fotos:         fotosComprimidas,
       geo_lat:       geoLat  || null,
       geo_lng:       geoLng  || null,
-      telefones_contato: _getVisitTels('visitTelsList').length ? _getVisitTels('visitTelsList') : null,
+      telefones_contato: _snap.visitTels.length ? _snap.visitTels : null,
     },
   };
 }
