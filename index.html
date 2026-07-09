@@ -423,6 +423,7 @@
     font-weight: 700; white-space: nowrap; flex-shrink: 0;
   }
   .status-pendente  { background: #fef3c7; color: #92400e; }
+  .status-primeiro-contato { background: #dbeafe; color: #1e40af; }
   .status-captado   { background: #d1fae5; color: #065f46; }
   .status-nao-captado { background: #fee2e2; color: #991b1b; }
   .status-followup  { background: #e0e7ff; color: #3730a3; }
@@ -436,6 +437,7 @@
   .sbtn-nao      { background: #fee2e2; color: #991b1b; }
   .sbtn-followup { background: #e0e7ff; color: #3730a3; }
   .sbtn-pendente { background: #fef3c7; color: #92400e; }
+  .sbtn-primeiro-contato { background: #dbeafe; color: #1e40af; }
   .sbtn-save     { background: var(--navy); color: #fff; margin-top: 8px; width: 100%; padding: 10px; }
   .history-detail { font-size: 13px; color: var(--dark); margin-bottom: 4px; }
   .obs-area textarea {
@@ -814,7 +816,10 @@
       <input type="hidden" id="pLat">
       <input type="hidden" id="pLng">
       <input type="hidden" id="pEditId">
-      <button onclick="salvarProspect()" id="btnSalvarProspect" style="background:#cc0000;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;width:100%;">💾 Salvar Imóvel</button>
+      <div style="display:flex;gap:10px;">
+        <button onclick="fecharFormProspect()" style="flex:1;background:#f3f4f6;color:#374151;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;">Cancelar</button>
+        <button onclick="salvarProspect()" id="btnSalvarProspect" style="flex:2;background:#cc0000;color:#fff;border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;">💾 Salvar Imóvel</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1248,6 +1253,25 @@
       📊 Relatórios
     </button>
   </div>
+  <!-- Filtros -->
+  <div id="histFiltrosBar" style="display:flex;gap:8px;padding:10px 16px;background:#f9fafb;border-bottom:1px solid #e5e7eb;flex-wrap:wrap;">
+    <select id="histFiltroCaptacao" onchange="loadHistory()" style="flex:1;min-width:150px;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;background:#fff;color:#374151;">
+      <option value="todos">🏠 Captação: Todos</option>
+      <option value="sem_contato">📵 Sem Contato</option>
+      <option value="visitado">👁️ Visitado</option>
+      <option value="captado">✅ Captado</option>
+      <option value="followup">📅 Follow-up</option>
+      <option value="descartado">❌ Descartado</option>
+    </select>
+    <select id="histFiltroVisita" onchange="loadHistory()" style="flex:1;min-width:150px;padding:8px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:12px;background:#fff;color:#374151;">
+      <option value="todos">📋 Visita: Todos</option>
+      <option value="pendente">⏳ Pendente</option>
+      <option value="primeiro_contato">📞 Primeiro Contato Realizado</option>
+      <option value="captado">✅ Captado</option>
+      <option value="nao_captado">❌ Não Captado</option>
+      <option value="follow_up">🔔 Follow-up</option>
+    </select>
+  </div>
   <!-- Conteúdo aba Visitas -->
   <div class="history-body" id="historyList" style="display:flex;flex-direction:column;">
     <div class="history-loading">Carregando...</div>
@@ -1279,10 +1303,11 @@
     <div style="padding:0 20px 12px;flex-shrink:0;">
       <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;margin-bottom:8px;">Alterar Status</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button ontouchstart="" onclick="vdSetStatus('pendente')" style="background:#fef3c7;color:#92400e;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">⏳ Pendente</button>
+        <button ontouchstart="" onclick="vdSetStatus('primeiro_contato')" style="background:#dbeafe;color:#1e40af;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">📞 1º Contato Realizado</button>
         <button ontouchstart="" onclick="vdSetStatus('captado')" style="background:#d1fae5;color:#065f46;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">✅ Captado</button>
         <button ontouchstart="" onclick="vdSetStatus('nao_captado')" style="background:#fee2e2;color:#991b1b;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">❌ Não Captado</button>
         <button ontouchstart="" onclick="vdSetStatus('follow_up')" style="background:#e0e7ff;color:#3730a3;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">🔔 Follow-up</button>
-        <button ontouchstart="" onclick="vdSetStatus('pendente')" style="background:#fef3c7;color:#92400e;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;">⏳ Pendente</button>
       </div>
     </div>
     <!-- Conteúdo scrollável -->
@@ -1449,6 +1474,7 @@
       <div>
         <select id="vEditStatus" onchange="toggleVEditFollowup()" style="width:100%;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;outline:none;background:#fff;box-sizing:border-box;">
           <option value="pendente">⏳ Pendente</option>
+          <option value="primeiro_contato">📞 Primeiro Contato Realizado</option>
           <option value="captado">✅ Captado</option>
           <option value="nao_captado">❌ Não Captado</option>
           <option value="follow_up">🔔 Follow-up</option>
@@ -1461,7 +1487,7 @@
       <!-- Botão Solicitar Fotos — aparece só quando status = captado -->
       <div id="vEditBtnSolicitarFotos" style="display:none;">
         <button ontouchstart="" onclick="abrirSolicitarFotos()" style="width:100%;padding:13px;background:#15803d;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:8px;">
-          📸 Solicitar Fotos do Imóvel
+          📋 Enviar Checklist
         </button>
       </div>
 
@@ -1485,7 +1511,7 @@
 <div id="solicitarFotosOverlay" style="display:none;position:fixed;inset:0;background:#f9fafb;z-index:1400;flex-direction:column;">
   <!-- Header -->
   <div style="position:sticky;top:0;background:#15803d;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;z-index:2;flex-shrink:0;">
-    <h3 style="font-size:16px;font-weight:700;color:#fff;margin:0;">📸 Solicitar Fotos</h3>
+    <h3 style="font-size:16px;font-weight:700;color:#fff;margin:0;">📋 Confirmar Dados e Enviar Checklist</h3>
     <button ontouchstart="" onclick="fecharSolicitarFotos()" style="background:rgba(255,255,255,0.2);border:none;color:#fff;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;">✕ Fechar</button>
   </div>
 
@@ -1603,17 +1629,17 @@
 
     <!-- BOTÃO GERAR MENSAGEM -->
     <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:env(safe-area-inset-bottom,16px);">
-      <button ontouchstart="" onclick="sfGerarMensagem()" style="width:100%;padding:15px;background:#15803d;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;touch-action:manipulation;">
-        📋 Gerar Mensagem para Fotógrafo
+      <button ontouchstart="" onclick="sfEnviar()" style="width:100%;padding:15px;background:#25d366;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;touch-action:manipulation;display:flex;align-items:center;justify-content:center;gap:8px;">
+        📤 Enviar Checklist no WhatsApp
       </button>
       <div id="sfMensagemBox" style="display:none;background:#fff;border:1.5px solid #d1fae5;border-radius:10px;padding:14px;">
-        <div style="font-size:11px;font-weight:700;color:#15803d;margin-bottom:8px;">MENSAGEM GERADA — toque para copiar:</div>
+        <div style="font-size:11px;font-weight:700;color:#15803d;margin-bottom:8px;">MENSAGEM ENVIADA — toque para copiar:</div>
         <pre id="sfMensagemTexto" onclick="sfCopiarMensagem()" style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;color:#1f2937;margin:0;cursor:pointer;"></pre>
         <button ontouchstart="" onclick="sfCopiarMensagem()" style="margin-top:10px;width:100%;padding:11px;background:#0a1628;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">
           📋 Copiar Mensagem
         </button>
         <button ontouchstart="" onclick="sfEnviarWhatsApp()" style="margin-top:8px;width:100%;padding:11px;background:#25d366;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation;">
-          💬 Abrir no WhatsApp
+          💬 Abrir no WhatsApp novamente
         </button>
       </div>
     </div>
@@ -2819,10 +2845,12 @@ function switchHistoryTab(tab) {
   _applyTabStyle(tab);
   if (tab === 'historico') {
     document.getElementById('historyList').style.display = 'flex';
+    document.getElementById('histFiltrosBar').style.display = 'flex';
     document.getElementById('relatorioContent').style.display = 'none';
     if (document.getElementById('historyList').children.length <= 1) loadHistory();
   } else {
     document.getElementById('historyList').style.display = 'none';
+    document.getElementById('histFiltrosBar').style.display = 'none';
     document.getElementById('relatorioContent').style.display = 'flex';
     loadRelatorios();
   }
@@ -2870,7 +2898,7 @@ async function loadRelatorios() {
   data.forEach(v => { const t = v.tipo_imovel || 'Não informado'; porTipo[t] = (porTipo[t]||0)+1; });
 
   // Por status
-  const statusLabel = { pendente:'⏳ Pendente', captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'🔔 Follow-up' };
+  const statusLabel = { pendente:'⏳ Pendente', primeiro_contato:'📞 Primeiro Contato Realizado', captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'🔔 Follow-up' };
   const porStatus = {};
   data.forEach(v => { const s = statusLabel[v.status] || '⏳ Pendente'; porStatus[s] = (porStatus[s]||0)+1; });
 
@@ -2986,8 +3014,13 @@ async function loadHistory() {
   if (_prospectsCache.length === 0 && currentUser) {
     await loadCaptarProspects();
   }
+  // ── Filtros selecionados pelo usuário ──
+  const _filtroCap = document.getElementById('histFiltroCaptacao')?.value || 'todos';
+  const _filtroVis = document.getElementById('histFiltroVisita')?.value || 'todos';
+  const _filtrosAtivos = (_filtroCap !== 'todos') || (_filtroVis !== 'todos');
+
   // ── Captação não-prospectos — cards expandíveis (calculado ANTES do early-return de visitas) ──
-  const _naoProspectos = (_prospectsCache || []).filter(p => p.status !== 'prospecto');
+  const _naoProspectos = (_prospectsCache || []).filter(p => p.status !== 'prospecto' && (_filtroCap === 'todos' || p.status === _filtroCap));
   const _scMapC = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626', sem_contato:'#7c3aed' };
   const _slMapC = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado', sem_contato:'📵 Sem Contato' };
   const _captacaoCompacto = _naoProspectos.length ? (() => {
@@ -3002,7 +3035,7 @@ async function loadHistory() {
         ? `<div class="history-detail"><strong>Follow-up:</strong> ${_formatarData(p.followup_date)}</div>` : '';
       return `
       <div class="history-card" id="ccard-${p.id}">
-        <div class="history-card-header" onclick="toggleCCard('${p.id}')" style="position:relative;">
+        <div class="history-card-header" ontouchstart="" onclick="toggleCCard('${p.id}')" style="position:relative;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:rgba(0,0,0,0.06);">
           <div style="flex:1;min-width:0;">
             <div class="history-prop">${p.proprietario || 'Proprietário não informado'}</div>
             <div class="history-addr">${p.endereco || '—'}</div>
@@ -3020,7 +3053,7 @@ async function loadHistory() {
             ${p.obs ? `<div class="history-detail"><strong>Obs:</strong> ${p.obs}</div>` : ''}
           </div>
           <div style="text-align:right;">
-            <button onclick="editarProspect('${p.id}')" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">✏️ Editar imóvel</button>
+            <button ontouchstart="" onclick="editarProspect('${p.id}')" style="background:#0a1628;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;touch-action:manipulation;">✏️ Editar imóvel</button>
           </div>
         </div>
       </div>`;
@@ -3033,11 +3066,12 @@ async function loadHistory() {
   })() : '';
 
   // Busca em ordem crescente para calcular número correto
-  const { data, error } = await supa.from('visits').select('*').order('created_at', { ascending: true });
+  const { data: _dataAll, error } = await supa.from('visits').select('*').order('created_at', { ascending: true });
   if (error) {
     listEl.innerHTML = _captacaoCompacto + `<div class="history-empty">❌ Erro: ${error.message}<br><small>Verifique se a tabela "visits" foi criada no Supabase.</small></div>`;
     return;
   }
+  const data = (_dataAll || []).filter(v => _filtroVis === 'todos' || v.status === _filtroVis);
 
   // ── Seção de lembretes de follow-up (captação + visitas) ──
   const _todayStr = new Date().toISOString().split('T')[0];
@@ -3073,13 +3107,14 @@ async function loadHistory() {
 
   if (!data?.length) {
     const _reminderHtml = _buildFollowupBanner(_naoProspectos, []);
-    listEl.innerHTML = _reminderHtml + (_captacaoCompacto || '<div class="history-empty">📭 Nenhuma visita registrada ainda.</div>');
+    const _msgVazio = _filtrosAtivos ? '📭 Nenhum resultado para os filtros selecionados.' : '📭 Nenhuma visita registrada ainda.';
+    listEl.innerHTML = _reminderHtml + (_captacaoCompacto || `<div class="history-empty">${_msgVazio}</div>`);
     return;
   }
 
   const total = data.length;
-  const statusClass = { pendente:'status-pendente', captado:'status-captado', nao_captado:'status-nao-captado', follow_up:'status-followup' };
-  const statusLabel = { pendente:'⏳ Pendente', captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'🔔 Follow-up' };
+  const statusClass = { pendente:'status-pendente', primeiro_contato:'status-primeiro-contato', captado:'status-captado', nao_captado:'status-nao-captado', follow_up:'status-followup' };
+  const statusLabel = { pendente:'⏳ Pendente', primeiro_contato:'📞 Primeiro Contato Realizado', captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'🔔 Follow-up' };
   const row = (label, val) => val ? `<div class="history-detail"><strong>${label}:</strong> ${val}</div>` : '';
 
   // Mostra mais recente primeiro (reverso), mas numeração de 1 a N (mais antigo = #1)
@@ -3289,7 +3324,7 @@ async function abrirDetalheVisita(vid) {
   }
   if (!vt) { showToast('⚠️ Não foi possível carregar.'); return; }
 
-  const statusLabel = { captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'📅 Follow-up', pendente:'⏳ Pendente' };
+  const statusLabel = { captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'📅 Follow-up', pendente:'⏳ Pendente', primeiro_contato:'📞 Primeiro Contato Realizado' };
   const dt = vt.data_visita ? new Date(vt.data_visita + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
   const q = vt.questionario || {};
 
@@ -3638,22 +3673,26 @@ function fecharSolicitarFotos() {
   document.getElementById('visitEditModal').style.display = 'flex';
 }
 
-function sfGerarMensagem() {
-  const servicos = [];
-  if (document.getElementById('sfServFoto').checked)  servicos.push('Foto');
-  if (document.getElementById('sfServDrone').checked) servicos.push('Drone');
+const SF_WHATSAPP_NUMERO = '55991447831';
 
-  const tipoSel    = document.querySelector('input[name="sfTipo"]:checked');
-  let tipo = tipoSel?.value || '';
-  if (tipo === 'outros') tipo = document.getElementById('sfTipoOutros').value.trim() || 'Outro';
+function sfMontarTexto() {
+  const ck = (b) => b ? '(X)' : '(  )';
 
-  const endereco   = document.getElementById('sfEndereco').value.trim();
-  const situacaoEl = document.querySelector('input[name="sfSituacao"]:checked');
-  const situacao   = situacaoEl?.value || '';
-  const metragem   = document.getElementById('sfMetragem').value.trim();
-  const posicaoEl  = document.querySelector('input[name="sfPosicao"]:checked');
-  const posicao    = posicaoEl?.value || '';
-  const org        = document.getElementById('sfOrganizacao').value || '';
+  const foto  = document.getElementById('sfServFoto').checked;
+  const drone = document.getElementById('sfServDrone').checked;
+
+  const tipoSel      = document.querySelector('input[name="sfTipo"]:checked')?.value || '';
+  const tipoOutrosTxt = document.getElementById('sfTipoOutros').value.trim();
+
+  const endereco = document.getElementById('sfEndereco').value.trim();
+
+  const situacaoSel = document.querySelector('input[name="sfSituacao"]:checked')?.value || '';
+
+  const metragem = document.getElementById('sfMetragem').value.trim();
+
+  const posicaoSel = document.querySelector('input[name="sfPosicao"]:checked')?.value || '';
+
+  const org = document.getElementById('sfOrganizacao').value || '';
 
   // Horários
   const datas = document.querySelectorAll('.sf-horario-data');
@@ -3667,23 +3706,46 @@ function sfGerarMensagem() {
     }
   });
 
-  // Monta mensagem
   const linhas = [
-    '📸 *SOLICITAÇÃO DE FOTOS — REMAX Noble*',
-    '',
-    servicos.length  ? `🎯 *Serviço:* ${servicos.join(' + ')}` : null,
-    tipo             ? `🏠 *Tipo:* ${tipo}` : null,
-    endereco         ? `📍 *Endereço:* ${endereco}` : null,
-    situacao         ? `🚪 *Situação:* ${situacao}` : null,
-    metragem         ? `📐 *Metragem:* ${metragem}m²` : null,
-    posicao          ? `🌅 *Posição solar (manhã):* ${posicao}` : null,
-    org              ? `🧹 *Organização:* ${org}/5` : null,
-    horarios.length  ? `\n⏰ *Opções de horários:*\n${horarios.map(h => '  • ' + h).join('\n')}` : null,
-  ].filter(l => l !== null).join('\n');
+    'Serviço:',
+    `${ck(foto)} foto`,
+    `${ck(drone)} drone`,
+    'Tipo',
+    `${ck(tipoSel === 'Apartamento')} apto`,
+    `${ck(tipoSel === 'Casa')} casa`,
+    `${ck(tipoSel === 'Terreno')} terreno`,
+    `${ck(tipoSel === 'Cobertura')} cobertura`,
+    `${ck(tipoSel === 'Loja/Sala Comercial')} loja/sala comercial`,
+    `${ck(tipoSel === 'outros')} outros:${tipoSel === 'outros' && tipoOutrosTxt ? ' ' + tipoOutrosTxt : ''}`,
+    `Endereço: ${endereco}`,
+    'Situação:',
+    `${ck(situacaoSel === 'Morador - Proprietário')} morador - proprietário`,
+    `${ck(situacaoSel === 'Morador - Inquilino')} morador - inquilino`,
+    `${ck(situacaoSel === 'Desocupado')} desocupado`,
+    `Metragem: ${metragem}${metragem ? 'm²' : ''}`,
+    'Posição solar:',
+    `${ck(posicaoSel === 'Norte')} N  ${ck(posicaoSel === 'Sul')} S  ${ck(posicaoSel === 'Leste')} L  ${ck(posicaoSel === 'Oeste')} O`,
+    `Organização de 0 a 5: ${org}`,
+    horarios.length ? `Horários:\n${horarios.map(h => '  • ' + h).join('\n')}` : 'Horários:',
+  ];
 
-  document.getElementById('sfMensagemTexto').textContent = linhas;
+  return linhas.join('\n');
+}
+
+function sfEnviar() {
+  const endereco = document.getElementById('sfEndereco').value.trim();
+  if (!endereco) {
+    showToast('⚠️ Preencha o endereço antes de enviar.');
+    document.getElementById('sfEndereco').focus();
+    return;
+  }
+
+  const txt = sfMontarTexto();
+  document.getElementById('sfMensagemTexto').textContent = txt;
   document.getElementById('sfMensagemBox').style.display = 'block';
   document.getElementById('sfMensagemBox').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  window.open('https://wa.me/' + SF_WHATSAPP_NUMERO + '?text=' + encodeURIComponent(txt), '_blank');
 }
 
 function sfCopiarMensagem() {
@@ -3700,7 +3762,7 @@ function sfCopiarMensagem() {
 
 function sfEnviarWhatsApp() {
   const txt = document.getElementById('sfMensagemTexto').textContent;
-  window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank');
+  window.open('https://wa.me/' + SF_WHATSAPP_NUMERO + '?text=' + encodeURIComponent(txt), '_blank');
 }
 
 function toggleVEditFollowup() {
@@ -5720,7 +5782,7 @@ async function gerarPDFFromHistory(vid) {
     if (vt.observacoes) { drawSec('Observações'); drawField('Observações', vt.observacoes); }
 
     // ── STATUS ──
-    const statusLabels = { captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'📅 Follow-up', pendente:'⏳ Pendente' };
+    const statusLabels = { captado:'✅ Captado', nao_captado:'❌ Não Captado', follow_up:'📅 Follow-up', pendente:'⏳ Pendente', primeiro_contato:'📞 Primeiro Contato Realizado' };
     if (vt.status) drawField('Status', statusLabels[vt.status] || vt.status);
 
     // ── FOTOS ──
