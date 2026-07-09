@@ -3020,10 +3020,15 @@ async function loadHistory() {
   const _filtrosAtivos = (_filtroCap !== 'todos') || (_filtroVis !== 'todos');
 
   // ── Captação não-prospectos — cards expandíveis (calculado ANTES do early-return de visitas) ──
+  const _naoProspectosTotal = (_prospectsCache || []).filter(p => p.status !== 'prospecto').length;
   const _naoProspectos = (_prospectsCache || []).filter(p => p.status !== 'prospecto' && (_filtroCap === 'todos' || p.status === _filtroCap));
   const _scMapC = { visitado:'#0a1628', captado:'#16a34a', followup:'#d97706', descartado:'#dc2626', sem_contato:'#7c3aed' };
   const _slMapC = { visitado:'👁️ Visitado', captado:'✅ Captado', followup:'📅 Follow-up', descartado:'❌ Descartado', sem_contato:'📵 Sem Contato' };
-  const _captacaoCompacto = _naoProspectos.length ? (() => {
+  const _captacaoCompacto = !_naoProspectosTotal ? '' : (!_naoProspectos.length ? `<div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;padding:12px 16px 6px;">🏠 Captação · 0 de ${_naoProspectosTotal} imóvel(is) com esse filtro</div>
+      <div class="history-empty" style="padding:8px 16px 24px;">📭 Nenhum imóvel de captação com o status selecionado.</div>
+      <div style="border-bottom:2px solid #e5e7eb;margin-bottom:16px;"></div>
+    </div>` : (() => {
     const cards = _naoProspectos.map(p => {
       const sc = _scMapC[p.status] || '#6b7280';
       const sl = _slMapC[p.status] || p.status;
@@ -3059,11 +3064,11 @@ async function loadHistory() {
       </div>`;
     }).join('');
     return `<div style="margin-bottom:16px;">
-      <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;padding:12px 16px 6px;">🏠 Captação · ${_naoProspectos.length} imóvel(is)</div>
+      <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;padding:12px 16px 6px;">🏠 Captação · ${_naoProspectos.length}${_filtroCap !== 'todos' ? ' de ' + _naoProspectosTotal : ''} imóvel(is)</div>
       ${cards}
       <div style="border-bottom:2px solid #e5e7eb;margin-bottom:16px;"></div>
     </div>`;
-  })() : '';
+  })());
 
   // Busca em ordem crescente para calcular número correto
   const { data: _dataAll, error } = await supa.from('visits').select('*').order('created_at', { ascending: true });
@@ -3727,18 +3732,25 @@ function sfMontarTexto() {
     `${ck(posicaoSel === 'Norte')} N  ${ck(posicaoSel === 'Sul')} S  ${ck(posicaoSel === 'Leste')} L  ${ck(posicaoSel === 'Oeste')} O`,
     `Organização de 0 a 5: ${org}`,
     horarios.length ? `Horários:\n${horarios.map(h => '  • ' + h).join('\n')}` : 'Horários:',
-  ];
+    endereco ? `\n📍 Rota até o imóvel: https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(endereco)}` : null,
+  ].filter(l => l !== null);
 
   return linhas.join('\n');
 }
 
 function sfEnviar() {
-  const endereco = document.getElementById('sfEndereco').value.trim();
-  if (!endereco) {
-    showToast('⚠️ Preencha o endereço antes de enviar.');
-    document.getElementById('sfEndereco').focus();
+  const enderecoEl = document.getElementById('sfEndereco');
+  const endereco = enderecoEl.value.trim();
+  // Endereço completo: exige nome de rua + número (pelo menos um dígito) e um tamanho mínimo
+  const enderecoCompleto = endereco.length >= 8 && /\d/.test(endereco);
+  if (!enderecoCompleto) {
+    showToast('⚠️ Preencha o endereço completo (rua e número) antes de enviar.');
+    enderecoEl.style.border = '1.5px solid #dc2626';
+    enderecoEl.focus();
+    enderecoEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
+  enderecoEl.style.border = '1.5px solid #e5e7eb';
 
   const txt = sfMontarTexto();
   document.getElementById('sfMensagemTexto').textContent = txt;
