@@ -1273,7 +1273,7 @@
     </select>
   </div>
   <!-- Conteúdo aba Visitas -->
-  <div class="history-body" id="historyList" style="display:flex;flex-direction:column;">
+  <div class="history-body" id="historyList" style="display:block;">
     <div class="history-loading">Carregando...</div>
   </div>
   <!-- Conteúdo aba Relatórios -->
@@ -2844,7 +2844,7 @@ function switchHistoryTab(tab) {
   _currentHistoryTab = tab;
   _applyTabStyle(tab);
   if (tab === 'historico') {
-    document.getElementById('historyList').style.display = 'flex';
+    document.getElementById('historyList').style.display = 'block';
     document.getElementById('histFiltrosBar').style.display = 'flex';
     document.getElementById('relatorioContent').style.display = 'none';
     if (document.getElementById('historyList').children.length <= 1) loadHistory();
